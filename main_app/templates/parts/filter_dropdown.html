@@ -1,0 +1,52 @@
+<div class="dropdown">
+  <!-- <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Topic
+  <span class="caret"></span></button>
+  <ul class="dropdown-menu" role="menu">
+    <li><a href="#">Physics</a></li>
+    <li><a href="#">Chemistry</a></li>
+  </ul> -->
+    <button class="btn btn-default" type="button" onclick="sort_and_filter_toggle()"> Sort and filters </button>
+
+    <div id="sort_and_filter" style="display: none;">
+        <form role="form">
+            <div class="form-group">
+                <label for="Author">Author:</label>
+                <input type="text" class="form-control" name="filter_author_full_name">
+            </div>
+            <div class="form-group">
+                <label for="date">From date:</label>
+                <input type="text" class="form-control" id="from_date">
+
+                <label for="date">To date:</label>
+                <input type="text" class="form-control" id="from_date">
+            </div>
+            <div class="form-group">
+                <label for="sort_by">Sort by (in order of sorting):</label>
+                <select name="sort_by_1">
+                    <option value="sort_by_none"> None </option>
+                    <option value="sort_by_date" selected> Date </option>
+                    <option value="sort_by_author"> Author </option>
+                    <option value="sort_by_category"> Category </option>
+                    <option value="sort_by_title"> Title </option>
+                </select>
+                <select name="sort_by_2">
+                    <option value="sort_by_none" selected> None </option>
+                    <option value="sort_by_date"> Date </option>
+                    <option value="sort_by_author"> Author </option>
+                    <option value="sort_by_category"> Category </option>
+                    <option value="sort_by_title"> Title </option>
+                </select>
+                <select name="sort_by_3">
+                    <option value="sort_by_none" selected> None </option>
+                    <option value="sort_by_date" >Date </option>
+                    <option value="sort_by_author" >Author </option>
+                    <option value="sort_by_category" >Category </option>
+                    <option value="sort_by_title" >Title </option>
+                </select>
+            </div>
+
+            <button type="reset" class="btn btn-default" value="Reset!"> Clear </button>
+            <button type="submit" class="btn btn-default"> Submit </button>
+        </form>
+    </div>
+</div>

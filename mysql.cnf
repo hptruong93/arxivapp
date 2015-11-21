@@ -1,0 +1,5 @@
+[client]
+
+database = django
+user = root
+password = Agent-is-A-Server

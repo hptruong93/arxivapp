@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% load staticfiles %}
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>ARXIV History</title>
+
+    {% include "parts/common_css.html" %}
+    
+</head>
+
+<body id="page-top" class="index">
+
+    <!-- Navigation -->
+    {% include "nav_bar.html" %}
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="intro-text">
+                        <span class="name">History</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Portfolio Grid Section -->
+    <section id="portfolio">
+        <div class="container">
+            <div class="row">
+            </div>
+
+            <div class="tabs">
+                <ul class="tab-links">
+                    <li class="active"><a href="#tab1">Papers</a></li>
+                    <li><a href="#tab2">Authors</a></li>
+                    <li><a href="#tab3">Topics</a></li>
+                </ul>
+
+                <div class="tab-content">
+                    <div id="tab1" class="tab active">
+                        {% include "parts/filter_dropdown.html" %}
+                        
+                        {% include "parts/papers_display.html" %}
+                    </div>
+
+                    <div id="tab2" class="tab">
+                        <div class="row">
+                            <div>
+                            {% for author_history in authors %}
+
+                            <a href="{% url 'author' author_history.author.id %}"> {{ author_history.author }} (Seen {{ author_history.count }} time) </a>
+                            <br>
+
+                            {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab3" class="tab">
+                        <div class="row">
+                            <div>
+                            {% for category_history in categories %}
+
+                            <a href="{% url 'category' category_history.category.code %}">{{ category_history.category }} (Seen {{ category_history.count }} time)</a>
+                            <br>
+
+                            {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% include "parts/common_js.html" %}
+
+</body>
+
+</html>

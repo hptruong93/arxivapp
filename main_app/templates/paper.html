@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+{% load staticfiles %}
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{{ paper.title }}</title>
+
+    {% include "parts/common_css.html" %}
+    {% include "parts/common_js.html" %}
+
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    {% include "nav_bar.html" %}
+    <br><br><br><br><br>
+
+    <div class="col-lg-8 col-lg-offset-2">
+        <div class="modal-body">
+            <h2>{{ paper.title }}</h2>
+            <hr class="star-primary">
+            <ul class="list-inline item-details">
+                <li>Authors:
+                    <strong>
+                    {% for author in authors %}
+
+                    <a href="{% url 'author' author.id %}">{{ author }}</a>,
+
+                    {% endfor %}
+                    </strong>
+                </li>
+                <li>Date:
+                    <strong><a href="">{{ paper.created_date|date:"DATETIME_FORMAT" }}</a></strong>
+                </li>
+                <li>Category:
+                    {% for category in categories %}
+                    <strong><a href="{% url 'category' category.code %}">{{ category }}</a></strong>,
+                    {% endfor %}
+                </li>
+            </ul>
+            <p> Abstract </p>
+            <p>{{ paper.abstract }}</p>
+            
+            <p><a href="{% url 'pdf' paper.arxiv_id %}"> Link to full text </a></p>
+            <div>
+                
+            </div>
+            <p style="text-align:left;">
+                <button class="btn btn-default"> Bookmark </button>
+
+                {% if history.seen %}
+                <span style="float:right;">You have seen this paper on {{ history.last_access }}</span>
+                {% else %}
+                <span style="float:right;">You have not seen this paper before</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+</body>
+
+</html>

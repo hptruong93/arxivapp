@@ -1,0 +1,38 @@
+{% for article_group in articles %}
+<div class="row">
+    {% for article in article_group %}
+
+    <div class="col-sm-4 portfolio-item"> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a>
+        <br> By: 
+        {% for author in article.all_authors %}
+            <a href="{% url 'author' author.id %}">{{ author }}</a>,
+        {% endfor %}
+        <br> On:  {{ article.created_date|date:"DATETIME_FORMAT" }}
+        <br> 
+
+        <div class="text-container"> 
+            <div class="show-more"> <a href="#">More</a> </div>
+            <div class="text-content short-text"> Abstract:  {{ article.abstract }} </div>
+        </div>
+
+    </div> 
+
+    {% endfor %}
+</div>
+{% endfor %}
+
+<div class="pagination">
+    <span class="step-links">
+        {% if paginated_articles.has_previous %}
+            <a href="?page={{ paginated_articles.previous_page_number }}">Previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ paginated_articles.number }} of {{ paginated_articles.paginator.num_pages }}.
+        </span>
+
+        {% if paginated_articles.has_next %}
+            <a href="?page={{ paginated_articles.next_page_number }}">Next</a>
+        {% endif %}
+    </span>
+</div>

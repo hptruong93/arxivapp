@@ -1,0 +1,16 @@
+div.text-container {
+    width: 75%;
+}
+
+.text-content{
+    line-height: 2.5ex;
+}
+
+.short-text {
+    overflow: hidden;
+    height: 7.5ex;
+}
+
+.full-text{
+    height: auto;
+}
