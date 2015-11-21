@@ -7,8 +7,14 @@ class Author(models.Model):
     middle_name = models.CharField(max_length=50, null = True)
     last_name = models.CharField(max_length=50)
 
+    full_name = models.CharField(max_length = 300)
+
+    def save(self, *args, **kwargs):
+        self.full_name = self.first_name + ' ' + self.last_name
+        super(Author, self).save(*args, **kwargs)
+
     def __unicode__(self):
-        return self.first_name + " " + self.last_name
+        return self.full_name
 
 class Category(models.Model):
     code = models.CharField(max_length=20, primary_key = True)

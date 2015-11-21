@@ -35,9 +35,10 @@ def _import_author(full_name):
 
         Return the django model object (either newly created, or fetched from database if already existed)
     """
-    split = full_name.split(' ')
+    split = full_name.strip().split(' ')
     first_name = ' '.join(split[:-1])
     last_name = split[-1]
+    print "Full name is %s while first and last are %s - %s" % (full_name, first_name, last_name)
 
     author, is_new = main_app_models.Author.objects.get_or_create(first_name = first_name, last_name = last_name)
     
@@ -81,7 +82,7 @@ def single_import(paper):
     updated_date = _parse_date(updated_date)
 
     title = paper['title']
-    authors = re.sub(r'\(.*?\)', '', paper['authors']).split(', ')
+    authors = re.sub(r'\(.*?\)', '', paper['authors'].strip()).split(', ')
     categories = paper['categories'].split(' ')
     journal_ref = paper['journal-ref']
     if len(journal_ref) == 0:

@@ -8,45 +8,43 @@
     <button class="btn btn-default" type="button" onclick="sort_and_filter_toggle()"> Sort and filters </button>
 
     <div id="sort_and_filter" style="display: none;">
-        <form role="form">
+        <form role="form" action="{{ request.path }}" method="post">
+            {% csrf_token %}
             <div class="form-group">
-                <label for="Author">Author:</label>
-                <input type="text" class="form-control" name="filter_author_full_name">
+                <label for="title">Title:</label>
+                <input type="text" class="form-control" name="filter_title" value="{{ filters_sorts.title }}">
+            </div>
+            <div class="form-group">
+                <label for="author">Author:</label>
+                <input type="text" class="form-control" name="filter_author_full_name" value="{{ filters_sorts.author_full_name }}">
+            </div>
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <input type="text" class="form-control" name="filter_category" placeholder="Name of category" value="{{ filters_sorts.category }}">
             </div>
             <div class="form-group">
                 <label for="date">From date:</label>
-                <input type="text" class="form-control" id="from_date">
+                <input type="text" class="form-control" name="filter_from_date" placeholder="dd/mm/yyyy" value="{{ filters_sorts.from_date }}">
 
                 <label for="date">To date:</label>
-                <input type="text" class="form-control" id="from_date">
+                <input type="text" class="form-control" name="filter_to_date" placeholder="dd/mm/yyyy" value="{{ filters_sorts.to_date }}">
             </div>
+
             <div class="form-group">
                 <label for="sort_by">Sort by (in order of sorting):</label>
                 <select name="sort_by_1">
                     <option value="sort_by_none"> None </option>
                     <option value="sort_by_date" selected> Date </option>
-                    <option value="sort_by_author"> Author </option>
-                    <option value="sort_by_category"> Category </option>
                     <option value="sort_by_title"> Title </option>
                 </select>
                 <select name="sort_by_2">
                     <option value="sort_by_none" selected> None </option>
                     <option value="sort_by_date"> Date </option>
-                    <option value="sort_by_author"> Author </option>
-                    <option value="sort_by_category"> Category </option>
                     <option value="sort_by_title"> Title </option>
-                </select>
-                <select name="sort_by_3">
-                    <option value="sort_by_none" selected> None </option>
-                    <option value="sort_by_date" >Date </option>
-                    <option value="sort_by_author" >Author </option>
-                    <option value="sort_by_category" >Category </option>
-                    <option value="sort_by_title" >Title </option>
                 </select>
             </div>
 
-            <button type="reset" class="btn btn-default" value="Reset!"> Clear </button>
-            <button type="submit" class="btn btn-default"> Submit </button>
+            <button type="submit" class="btn btn-default"> Filter and Sort </button>
         </form>
     </div>
 </div>

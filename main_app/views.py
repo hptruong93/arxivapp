@@ -12,14 +12,31 @@ from django.db import models as db_models
 
 
 from main_app import models as main_app_models
+from main_app.history_tracking import history_tracking
+from main_app.view_filters_sorts import paper_filter_sorts
+from main_app import central_config as config
+from main_app.utils import utils_general
 # Create your views here.
 
-MAX_SHORT_DESC_LEN = 200
-MAX_COLUMN_DISPLAYED = 3
-MAX_ARTICLE_DISPLAY = 20
+def _general_filter_check(request):
+    filter_dict = {}
+    order_by_fields = ['-created_date', 'title']
 
-def _n_group(l, n):
-    return [ l[i:i+n] for i in range(0, len(l), n) ]
+    filter_data = {}
+    if request.method == "POST":
+        filter_data = paper_filter_sorts.filter_paper(request.POST, filter_dict, order_by_fields)
+
+    return filter_dict, order_by_fields, filter_data
+
+def _query_filter(query, filter_dict, order_by_fields):
+    output = query
+    if filter_dict:
+        output = output.filter(**filter_dict)
+
+    if order_by_fields:
+        output = output.order_by(*order_by_fields)
+
+    return output
 
 def _prepare_view_articles(articles, page_number):
     """
@@ -29,7 +46,7 @@ def _prepare_view_articles(articles, page_number):
 
         Without pagination, it would be impossible to fit all papers into memory and process them.
     """
-    pagination = paginator.Paginator(articles, MAX_ARTICLE_DISPLAY)
+    pagination = paginator.Paginator(articles, config.MAX_ARTICLE_DISPLAY)
 
     try:
         articles = pagination.page(page_number)
@@ -40,8 +57,9 @@ def _prepare_view_articles(articles, page_number):
 
     for article in articles:
         article.all_authors = article.authors.all()
+        article.all_categories = article.categories.all()
 
-    return _n_group(articles, MAX_COLUMN_DISPLAYED), articles
+    return utils_general._n_group(articles, config.MAX_COLUMN_DISPLAYED), articles
 
 def _render_papers(request, articles, additional_data = None):
     articles, paginated_articles = _prepare_view_articles(articles, request.GET.get('page'))
@@ -63,11 +81,6 @@ def _to_login(request, message = ''):
         })
 
 ###############################################################################################################################
-
-@auth_decorators.login_required
-def index(request):
-    articles = main_app_models.Paper.objects.order_by('-created_date', 'title')
-    return _render_papers(request, articles)
 
 def signup(request):
     if request.method == 'POST':
@@ -107,59 +120,33 @@ def login(request, link = None):
         return _to_login(request)
 
 @auth_decorators.login_required
+def index(request):
+    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
+    articles = _query_filter(main_app_models.Paper.objects, filter_dict, order_by_fields)
+    return _render_papers(request, articles, {'filters_sorts' : filter_data})
+
+@auth_decorators.login_required
 def author(request, author_id):
+    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
     author = shortcuts.get_object_or_404(main_app_models.Author, id = author_id)
-    articles = main_app_models.Paper.objects.filter(authors__id = author_id).order_by('-created_date', 'title')
-    return _render_papers(request, articles, {'header_message' : 'All articles by %s' % author})
+    articles = _query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_dict, order_by_fields)
+    return _render_papers(request, articles, {'header_message' : 'All articles by %s' % author, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def category(request, category_code):
+    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
     category = shortcuts.get_object_or_404(main_app_models.Category, code = category_code)
-    articles = main_app_models.Paper.objects.filter(categories__code = category_code).order_by('-created_date', 'title')
-    return _render_papers(request, articles, {'header_message' : 'All articles on %s' % category})
+    articles = _query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_dict, order_by_fields)
+    return _render_papers(request, articles, {'header_message' : 'All articles in %s' % category, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def paper(request, paper_id):
     paper = shortcuts.get_object_or_404(main_app_models.Paper, pk = paper_id)
     current_user = request.user
 
-    MAX_HISTORY_PAPER = 100
-    MAX_HISTORY_AUTHORS = 20
-    MAX_HISTORY_CATEGORIES = 10
-
-    def _remove_history(history_query, maximum_history_item):
-        history_count = history_query.count()
-        if history_count >= maximum_history_item:
-            to_remove = history_query[maximum_history_item:] #Last object is the oldest
-            for remove_history in to_remove:
-                remove_history.delete()
-
-    #paper
-    paper_history_record, new_paper = main_app_models.PaperHistory.objects.get_or_create(user = current_user, paper = paper)
-    paper_history_record.count += 1
-    paper_history_record.save()
-
-    query_paper_history = main_app_models.PaperHistory.objects.filter(user = current_user).order_by('-last_access')
-    _remove_history(query_paper_history, MAX_HISTORY_PAPER)
-
-    #author
-    for author in paper.authors.all():
-        history_record, created = main_app_models.AuthorHistory.objects.get_or_create(user = current_user, author = author)
-        history_record.count += 1
-        history_record.save()
-
-    author_history = main_app_models.AuthorHistory.objects.filter(user = current_user).order_by('-last_access')
-    _remove_history(author_history, MAX_HISTORY_AUTHORS)
-
-    #category
-    for category in paper.categories.all():
-        history_record, created = main_app_models.CategoryHistory.objects.get_or_create(user = current_user, category = category)
-        history_record.count += 1
-        history_record.save()
-
-    category_history = main_app_models.CategoryHistory.objects.filter(user = current_user).order_by('-last_access')
-    _remove_history(category_history, MAX_HISTORY_CATEGORIES)
-
+    paper_history_record, new_paper = history_tracking.log_paper(current_user, paper)
+    history_tracking.log_authors(current_user, paper)
+    history_tracking.log_categories(current_user, paper)
 
     data = {
         'request' : request,
@@ -183,10 +170,17 @@ def pdf(request, arxiv_id):
 def history(request):
     current_user = request.user
 
-    paper_history = main_app_models.PaperHistory.objects.filter(user = current_user).order_by('-last_access')
-    articles = [paper_item.paper for paper_item in paper_history]
-    articles, paginated_articles = _prepare_view_articles(articles, request.GET.get('page'))
+    filter_dict = {}
+    order_by_fields = ['-last_access']
 
+    filter_data = {}
+    if request.method == "POST":
+        filter_data = paper_filter_sorts.filter_paper_history(request.POST, filter_dict, order_by_fields)
+
+    paper_history = _query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_dict, order_by_fields)
+    articles = [paper_item.paper for paper_item in paper_history]
+
+    articles, paginated_articles = _prepare_view_articles(articles, request.GET.get('page'))
     author_history = main_app_models.AuthorHistory.objects.filter(user = current_user).order_by('author__last_name', 'author__first_name')
     category_history = main_app_models.CategoryHistory.objects.filter(user = current_user).order_by('category__code')
 
@@ -195,19 +189,20 @@ def history(request):
         'articles' : articles,
         'paginated_articles' : paginated_articles,
         'authors' : author_history,
-        'categories' : category_history
+        'categories' : category_history,
+        'filters_sorts' : filter_data,
     }
+
     return shortcuts.render(request, 'history.html', data)
 
 @auth_decorators.login_required
 def search(request):
     try:
         search_value = request.POST['search_value']
-        print "Searching for %s" % search_value
         articles_query = main_app_models.Paper.objects.filter(title__icontains = search_value).order_by('-created_date', 'title')
         articles, paginated_articles = _prepare_view_articles(articles_query, request.GET.get('page'))
 
-        authors = main_app_models.Author.objects.filter(db_models.Q(first_name__icontains = search_value) | db_models.Q(last_name__icontains = search_value))
+        authors = main_app_models.Author.objects.filter(full_name__icontains = search_value)
         categories = main_app_models.Category.objects.filter(db_models.Q(code__icontains = search_value) | db_models.Q(name__icontains = search_value))
 
         data = {

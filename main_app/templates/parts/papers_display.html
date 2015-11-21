@@ -7,7 +7,11 @@
         {% for author in article.all_authors %}
             <a href="{% url 'author' author.id %}">{{ author }}</a>,
         {% endfor %}
-        <br> On:  {{ article.created_date|date:"DATETIME_FORMAT" }}
+        <br> On: {{ article.created_date|date:"DATETIME_FORMAT" }}
+        <br> In: 
+        {% for category in article.all_categories %}
+            <a href="{% url 'category' category.code %}">{{ category }}</a>,
+        {% endfor %}
         <br> 
 
         <div class="text-container"> 
