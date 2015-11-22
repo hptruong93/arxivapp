@@ -40,10 +40,45 @@ class Paper(models.Model):
         return self.title
 
 class PaperHistory(abstract_models.AbstractUserHistory):
+    """
+        Logged when user clicks on a specific paper
+    """
     paper = models.ForeignKey(Paper)
+
+class PaperSurfHistory(abstract_models.AbstractUserHistory):
+    """
+        Logged when user browse papers and this one shows up in the browsing screen
+        The difference with regular PaperHistory is that the user does not have to click
+        on the paper for this to be logged
+    """
+    paper = models.ForeignKey(Paper)
+
+class AuthorFocusHistory(abstract_models.AbstractUserHistory):
+    """
+        Logged when user sees a specific author by clicking on the link at author's name
+    """
+    author = models.ForeignKey(Author)
     
 class AuthorHistory(abstract_models.AbstractUserHistory):
+    """
+        When user visits a paper, all authors in that paper will be logged
+    """
     author = models.ForeignKey(Author)
 
-class CategoryHistory(abstract_models.AbstractUserHistory):
+class CategoryFocusHistory(abstract_models.AbstractUserHistory):
+    """
+        Logged when user sees a specific category by clicking on the link at category's name
+    """
     category = models.ForeignKey(Category)
+
+class CategoryHistory(abstract_models.AbstractUserHistory):
+    """
+        When user visits a paper, all categories in that paper will be logged
+    """
+    category = models.ForeignKey(Category)
+
+class SearchHistory(abstract_models.AbstractUserHistory):
+    """
+        When user searches for a term, it is logged in this
+    """
+    search_term = models.CharField(max_length = 500)

@@ -38,7 +38,7 @@ def _query_filter(query, filter_dict, order_by_fields):
 
     return output
 
-def _prepare_view_articles(articles, page_number):
+def _prepare_view_articles(current_user, articles, page_number):
     """
         Preprocess the articles with information to put on html template
         It is important to use pagination here and leverage the lazy nature of django model
@@ -55,6 +55,8 @@ def _prepare_view_articles(articles, page_number):
     except paginator.EmptyPage: #Otherwise show last page if page out of range
         articles = paginator.page(pagination.num_pages)
 
+    history_tracking.log_paper_surf(current_user, articles)
+
     for article in articles:
         article.all_authors = article.authors.all()
         article.all_categories = article.categories.all()
@@ -62,7 +64,7 @@ def _prepare_view_articles(articles, page_number):
     return utils_general._n_group(articles, config.MAX_COLUMN_DISPLAYED), articles
 
 def _render_papers(request, articles, additional_data = None):
-    articles, paginated_articles = _prepare_view_articles(articles, request.GET.get('page'))
+    articles, paginated_articles = _prepare_view_articles(request.user, articles, request.GET.get('page'))
 
     data = {
         'request' : request,
@@ -127,15 +129,19 @@ def index(request):
 
 @auth_decorators.login_required
 def author(request, author_id):
-    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
     author = shortcuts.get_object_or_404(main_app_models.Author, id = author_id)
+    history_tracking.log_author_focus(request.user, author)
+
+    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
     articles = _query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_dict, order_by_fields)
     return _render_papers(request, articles, {'header_message' : 'All articles by %s' % author, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def category(request, category_code):
-    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
     category = shortcuts.get_object_or_404(main_app_models.Category, code = category_code)
+    history_tracking.log_category_focus(request.user, category)
+
+    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
     articles = _query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_dict, order_by_fields)
     return _render_papers(request, articles, {'header_message' : 'All articles in %s' % category, 'filters_sorts' : filter_data})
 
@@ -180,7 +186,7 @@ def history(request):
     paper_history = _query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_dict, order_by_fields)
     articles = [paper_item.paper for paper_item in paper_history]
 
-    articles, paginated_articles = _prepare_view_articles(articles, request.GET.get('page'))
+    articles, paginated_articles = _prepare_view_articles(current_user, articles, request.GET.get('page'))
     author_history = main_app_models.AuthorHistory.objects.filter(user = current_user).order_by('author__last_name', 'author__first_name')
     category_history = main_app_models.CategoryHistory.objects.filter(user = current_user).order_by('category__code')
 
@@ -197,10 +203,14 @@ def history(request):
 
 @auth_decorators.login_required
 def search(request):
+    current_user = request.user
     try:
         search_value = request.POST['search_value']
-        articles_query = main_app_models.Paper.objects.filter(title__icontains = search_value).order_by('-created_date', 'title')
-        articles, paginated_articles = _prepare_view_articles(articles_query, request.GET.get('page'))
+        history_tracking.log_search(current_user, search_value)
+
+        filter_dict, order_by_fields, filter_data = _general_filter_check(request)
+        articles_query = _query_filter(main_app_models.Paper.objects.filter(title__icontains = search_value), filter_dict, order_by_fields)
+        articles, paginated_articles = _prepare_view_articles(current_user, articles_query, request.GET.get('page'))
 
         authors = main_app_models.Author.objects.filter(full_name__icontains = search_value)
         categories = main_app_models.Category.objects.filter(db_models.Q(code__icontains = search_value) | db_models.Q(name__icontains = search_value))
@@ -215,7 +225,9 @@ def search(request):
                 'articles' : articles_query.count(),
                 'authors' : len(authors),
                 'categories' : len(categories)
-            }
+            },
+            'search_value' : search_value,
+            'filters_sorts' : filter_data,
         }
 
         return shortcuts.render(request, 'search.html', data)

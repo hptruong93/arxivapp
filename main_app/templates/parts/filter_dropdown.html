@@ -10,6 +10,11 @@
     <div id="sort_and_filter" style="display: none;">
         <form role="form" action="{{ request.path }}" method="post">
             {% csrf_token %}
+
+            {% if search_value %}
+            <input type="text" class="form-control" name="search_value" value="{{ search_value }}" style="display: none;">
+            {% endif %}
+
             <div class="form-group">
                 <label for="title">Title:</label>
                 <input type="text" class="form-control" name="filter_title" value="{{ filters_sorts.title }}">
