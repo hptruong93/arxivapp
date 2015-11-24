@@ -8,6 +8,7 @@ MAX_HISTORY_AUTHOR_FOCUS = 100
 MAX_HISTORY_CATEGORIES = 10
 MAX_HISTORY_CATEGORIES_FOCUS = 20
 MAX_HISTORY_SEARCH = 200
+MAX_HISTORY_FULL_PAPER_VIEW = 100
 
 def _remove_history(history_query, maximum_history_item):
     history_count = history_query.count()
@@ -28,9 +29,9 @@ def _add_history_record(model, current_user, **kwargs):
 
     return history_record, new_entry
 
-def log_paper_surf(current_user, papers):
-    for paper in papers:
-        _add_history_record(models.PaperSurfHistory, current_user, paper = paper)
+def log_paper_surf(current_user, papers, page_number):
+    for index, paper in enumerate(papers):
+        _add_history_record(models.PaperSurfHistory, current_user, paper = paper, page_number = page_number, in_page_index = index)
 
     paper_surf_history = models.PaperSurfHistory.objects.filter(user = current_user).order_by('-last_access')
     _remove_history(paper_surf_history, MAX_HISTORY_PAPER_SURF)
@@ -71,3 +72,8 @@ def log_search(current_user, search_term):
     _add_history_record(models.SearchHistory, current_user, search_term = search_term)
     search_history = models.SearchHistory.objects.filter(user = current_user).order_by('-last_access')
     _remove_history(search_history, MAX_HISTORY_SEARCH)
+
+def log_full_paper_view(current_user, paper):
+    _add_history_record(models.FullPaperViewHistory, current_user, paper = paper)
+    full_paper_view_history = models.FullPaperViewHistory.objects.filter(user = current_user).order_by('-last_access')
+    _remove_history(full_paper_view_history, MAX_HISTORY_FULL_PAPER_VIEW)

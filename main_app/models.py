@@ -52,6 +52,8 @@ class PaperSurfHistory(abstract_models.AbstractUserHistory):
         on the paper for this to be logged
     """
     paper = models.ForeignKey(Paper)
+    page_number = models.IntegerField(default = 0, null = False)
+    in_page_index = models.IntegerField(default = 0, null = False)
 
 class AuthorFocusHistory(abstract_models.AbstractUserHistory):
     """
@@ -82,3 +84,10 @@ class SearchHistory(abstract_models.AbstractUserHistory):
         When user searches for a term, it is logged in this
     """
     search_term = models.CharField(max_length = 500)
+
+class FullPaperViewHistory(abstract_models.AbstractUserHistory):
+    """
+        When user clicks on a link to view full paper content (e.g. pdf link)
+    """
+    paper = models.ForeignKey(Paper)
+

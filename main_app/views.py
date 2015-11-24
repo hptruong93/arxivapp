@@ -47,15 +47,18 @@ def _prepare_view_articles(current_user, articles, page_number):
         Without pagination, it would be impossible to fit all papers into memory and process them.
     """
     pagination = paginator.Paginator(articles, config.MAX_ARTICLE_DISPLAY)
+    displayed_page_number = page_number
 
     try:
         articles = pagination.page(page_number)
     except paginator.PageNotAnInteger: #Show first page
         articles = pagination.page(1)
+        displayed_page_number = 1
     except paginator.EmptyPage: #Otherwise show last page if page out of range
         articles = paginator.page(pagination.num_pages)
+        displayed_page_number = pagination.num_pages
 
-    history_tracking.log_paper_surf(current_user, articles)
+    history_tracking.log_paper_surf(current_user, articles, displayed_page_number)
 
     for article in articles:
         article.all_authors = article.authors.all()
@@ -169,7 +172,8 @@ def paper(request, paper_id):
 
 @auth_decorators.login_required
 def pdf(request, arxiv_id):
-    #Custom action goes here. I.e. log user's activity
+    paper = shortcuts.get_object_or_404(main_app_models.Paper, pk = arxiv_id)
+    history_tracking.log_full_paper_view(request.user, paper)
     return shortcuts.HttpResponseRedirect('http://www.arxiv.org/pdf/%s' % arxiv_id)
 
 @auth_decorators.login_required

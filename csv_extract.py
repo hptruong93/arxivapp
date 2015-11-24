@@ -35,10 +35,26 @@ def _import_author(full_name):
 
         Return the django model object (either newly created, or fetched from database if already existed)
     """
-    split = full_name.strip().split(' ')
+    full_name = full_name.strip()
+    if len(full_name) < 2:
+        return None
+
+    split = full_name.split(' ')
     first_name = ' '.join(split[:-1])
     last_name = split[-1]
+
+    not_ends_with = ['jr', 'jr.', 'sr', 'sr.']
+    is_good = True
+    for string in not_ends_with:
+        if last_name.lower().endswith(string):
+            is_good = False
+
+    if not is_good:
+        last_name = split[-2] + ' ' + split[-1]
+        first_name = ' '.join(split[:-2])
+
     print "Full name is %s while first and last are %s - %s" % (full_name, first_name, last_name)
+    assert len(last_name) != 0
 
     author, is_new = main_app_models.Author.objects.get_or_create(first_name = first_name, last_name = last_name)
     
@@ -52,7 +68,7 @@ def _import_category(code):
 
         Return the django model object (either newly created, or fetched from database if already existed)
     """
-    category, is_new = main_app_models.Category.objects.get_or_create(code = code)
+    category, is_new = main_app_models.Category.objects.get_or_create(code = code.strip())
 
     return category
 
@@ -82,7 +98,26 @@ def single_import(paper):
     updated_date = _parse_date(updated_date)
 
     title = paper['title']
-    authors = re.sub(r'\(.*?\)', '', paper['authors'].strip()).split(', ')
+
+    authors = paper['authors'].replace('\\,', '')
+
+    authors = re.sub(r'\(.*?\)', '', authors).strip().split(', ')
+    not_ends_with = ['jr', 'jr.', 'sr', 'sr.']
+    for index, full_name in enumerate(authors):
+        full_name = full_name.strip()
+
+        is_good = True
+        for string in not_ends_with:
+            if full_name.lower().endswith(string):
+                is_good = False
+                break
+
+        if not is_good:
+            authors[index - 1] += ' ' + full_name
+            authors[index] = ''
+
+    print "Authors are %s" % authors
+
     categories = paper['categories'].split(' ')
     journal_ref = paper['journal-ref']
     if len(journal_ref) == 0:
@@ -102,7 +137,8 @@ def single_import(paper):
     imported_categories = map(_import_category, categories)
 
     for author in imported_authors:
-        inserting_paper.authors.add(author)
+        if author:
+            inserting_paper.authors.add(author)
 
     for category in imported_categories:
         inserting_paper.categories.add(category)
