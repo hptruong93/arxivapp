@@ -15,27 +15,29 @@
             <input type="text" class="form-control" name="search_value" value="{{ search_value }}" style="display: none;">
             {% endif %}
 
-            <div class="form-group">
+            <div class="form-group col-sm-12">
                 <label for="title">Title:</label>
                 <input type="text" class="form-control" name="filter_title" value="{{ filters_sorts.title }}">
             </div>
-            <div class="form-group">
+            <div class="form-group col-sm-12">
                 <label for="author">Author:</label>
                 <input type="text" class="form-control" name="filter_author_full_name" value="{{ filters_sorts.author_full_name }}">
             </div>
-            <div class="form-group">
+            <div class="form-group col-sm-6">
                 <label for="category">Category:</label>
-                <input type="text" class="form-control" name="filter_category" placeholder="Name of category" value="{{ filters_sorts.category }}">
+                <input type="text" class="form-control" name="filter_category" placeholder="Category code/name" value="{{ filters_sorts.category }}">
             </div>
-            <div class="form-group">
+
+            <div class="form-group col-sm-3">
                 <label for="date">From date:</label>
                 <input type="text" class="form-control" name="filter_from_date" placeholder="dd/mm/yyyy" value="{{ filters_sorts.from_date }}">
-
+            </div>
+            <div class="form-group col-sm-3">
                 <label for="date">To date:</label>
                 <input type="text" class="form-control" name="filter_to_date" placeholder="dd/mm/yyyy" value="{{ filters_sorts.to_date }}">
             </div>
 
-            <div class="form-group">
+            <div class="form-group col-sm-12">
                 <label for="sort_by">Sort by (in order of sorting):</label>
                 <select name="sort_by_1">
                     <option value="sort_by_none"> None </option>
@@ -52,4 +54,5 @@
             <button type="submit" class="btn btn-default"> Filter and Sort </button>
         </form>
     </div>
+    <br><br><br>
 </div>

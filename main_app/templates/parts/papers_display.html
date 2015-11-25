@@ -2,8 +2,9 @@
 <div class="row">
     {% for article in article_group %}
 
-    <div class="col-sm-4 portfolio-item"> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a>
-        <br> By: 
+    <div class="col-sm-12 portfolio-item">
+        <h4> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a> </h4>
+        By: 
         {% for author in article.all_authors %}
             <a href="{% url 'author' author.id %}">{{ author }}</a>,
         {% endfor %}
@@ -14,15 +15,14 @@
         {% endfor %}
         <br> 
 
-        <div class="text-container"> 
-            <div class="show-more"> <a href="#">More</a> </div>
-            <div class="text-content short-text"> Abstract:  {{ article.abstract }} </div>
+        <div class="text-container">
+            <div class="show-more"> <a href="#">Full Abstract</a> </div>
+            <div class="text-content short-text"> {{ article.abstract }} </div>
         </div>
-
     </div> 
-
     {% endfor %}
 </div>
+<hr>
 {% endfor %}
 
 <div class="pagination">

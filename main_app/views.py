@@ -19,17 +19,22 @@ from main_app.utils import utils_general
 # Create your views here.
 
 def _general_filter_check(request):
+    filter_args = []
     filter_dict = {}
     order_by_fields = ['-created_date', 'title']
 
     filter_data = {}
     if request.method == "POST":
-        filter_data = paper_filter_sorts.filter_paper(request.POST, filter_dict, order_by_fields)
+        filter_data = paper_filter_sorts.filter_paper(request.POST, filter_args, filter_dict, order_by_fields)
 
-    return filter_dict, order_by_fields, filter_data
+    return filter_args, filter_dict, order_by_fields, filter_data
 
-def _query_filter(query, filter_dict, order_by_fields):
+def _query_filter(query, filter_args, filter_dict, order_by_fields):
     output = query
+
+    if filter_args:
+        output = output.filter(*filter_args)
+
     if filter_dict:
         output = output.filter(**filter_dict)
 
@@ -126,8 +131,8 @@ def login(request, link = None):
 
 @auth_decorators.login_required
 def index(request):
-    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
-    articles = _query_filter(main_app_models.Paper.objects, filter_dict, order_by_fields)
+    filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request)
+    articles = _query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
     return _render_papers(request, articles, {'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
@@ -135,8 +140,8 @@ def author(request, author_id):
     author = shortcuts.get_object_or_404(main_app_models.Author, id = author_id)
     history_tracking.log_author_focus(request.user, author)
 
-    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
-    articles = _query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_dict, order_by_fields)
+    filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request)
+    articles = _query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_args, filter_dict, order_by_fields)
     return _render_papers(request, articles, {'header_message' : 'All articles by %s' % author, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
@@ -144,8 +149,8 @@ def category(request, category_code):
     category = shortcuts.get_object_or_404(main_app_models.Category, code = category_code)
     history_tracking.log_category_focus(request.user, category)
 
-    filter_dict, order_by_fields, filter_data = _general_filter_check(request)
-    articles = _query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_dict, order_by_fields)
+    filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request)
+    articles = _query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_args, filter_dict, order_by_fields)
     return _render_papers(request, articles, {'header_message' : 'All articles in %s' % category, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
@@ -179,15 +184,15 @@ def pdf(request, arxiv_id):
 @auth_decorators.login_required
 def history(request):
     current_user = request.user
-
+    filter_args = []
     filter_dict = {}
     order_by_fields = ['-last_access']
 
     filter_data = {}
     if request.method == "POST":
-        filter_data = paper_filter_sorts.filter_paper_history(request.POST, filter_dict, order_by_fields)
+        filter_data = paper_filter_sorts.filter_paper_history(request.POST, filter_args, filter_dict, order_by_fields)
 
-    paper_history = _query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_dict, order_by_fields)
+    paper_history = _query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_args, filter_dict, order_by_fields)
     articles = [paper_item.paper for paper_item in paper_history]
 
     articles, paginated_articles = _prepare_view_articles(current_user, articles, request.GET.get('page'))
@@ -212,8 +217,8 @@ def search(request):
         search_value = request.POST['search_value']
         history_tracking.log_search(current_user, search_value)
 
-        filter_dict, order_by_fields, filter_data = _general_filter_check(request)
-        articles_query = _query_filter(main_app_models.Paper.objects.filter(title__icontains = search_value), filter_dict, order_by_fields)
+        filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request)
+        articles_query = _query_filter(main_app_models.Paper.objects.filter(title__icontains = search_value), filter_args, filter_dict, order_by_fields)
         articles, paginated_articles = _prepare_view_articles(current_user, articles_query, request.GET.get('page'))
 
         authors = main_app_models.Author.objects.filter(full_name__icontains = search_value)

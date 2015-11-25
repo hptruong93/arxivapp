@@ -32,10 +32,10 @@ $(".show-more a").on("click", function() {
 function getShowLinkText(currentText) {
     var newText = '';
 
-    if (currentText.toUpperCase() === "MORE") {
-        newText = "Less";
+    if (currentText.toUpperCase() === "FULL ABSTRACT") {
+        newText = "Less Abstract";
     } else {
-        newText = "More";
+        newText = "Full Abstract";
     }
 
     return newText;

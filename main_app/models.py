@@ -33,7 +33,7 @@ class Paper(models.Model):
     
     title = models.CharField(max_length=400)
     authors = models.ManyToManyField(Author)
-    abstract = models.CharField(max_length=4000)
+    abstract = models.CharField(max_length=5000)
     link_full_text_pdf = models.CharField(max_length=700, null = True)
 
     def __unicode__(self):

@@ -1,4 +1,4 @@
-
+from django.db import models as db_models
 from main_app import models as main_app_models
 
 from main_app.utils import utils_general
@@ -24,7 +24,7 @@ def _extract_params(post_request):
 
     return output
 
-def _generic_filter_paper(post_request, filter_dict, order_by_fields, prepend_name):
+def _generic_filter_paper(post_request, filter_args, filter_kwargs, order_by_fields, prepend_name):
     SORT_FIELDS = {
         'sort_by_date' : '-%screated_date' % prepend_name,
         'sort_by_title' : '%stitle' % prepend_name
@@ -34,19 +34,20 @@ def _generic_filter_paper(post_request, filter_dict, order_by_fields, prepend_na
     sorting_fields = [extracted_params['sort_by_1'], extracted_params['sort_by_2']]
 
     if extracted_params['title']:
-        filter_dict['%stitle__icontains' % prepend_name] = extracted_params['title']
+        filter_kwargs['%stitle__icontains' % prepend_name] = extracted_params['title']
 
     if extracted_params['author_full_name']:
-        filter_dict['%sauthors__full_name__icontains' % prepend_name] = extracted_params['author_full_name']
+        filter_kwargs['%sauthors__full_name__icontains' % prepend_name] = extracted_params['author_full_name']
 
     if extracted_params['category']:
-        filter_dict['%scategories__name__icontains' % prepend_name] = extracted_params['category']
+        filter_args.append(db_models.Q(**{'%scategories__name__icontains' % prepend_name : extracted_params['category']}) \
+                        | db_models.Q(**{'%scategories__code__icontains' % prepend_name : extracted_params['category']}))
 
     if extracted_params['from_date']:
-        filter_dict['%screated_date__gte' % prepend_name] = extracted_params['from_date']
+        filter_kwargs['%screated_date__gte' % prepend_name] = extracted_params['from_date']
 
     if extracted_params['to_date']:
-        filter_dict['%screated_date__lte' % prepend_name] = extracted_params['to_date']
+        filter_kwargs['%screated_date__lte' % prepend_name] = extracted_params['to_date']
 
     if [field for field in sorting_fields if field]:
         del order_by_fields[:]
@@ -57,9 +58,9 @@ def _generic_filter_paper(post_request, filter_dict, order_by_fields, prepend_na
 
     return {k: v for k, v in extracted_params.iteritems() if v}
 
-def filter_paper_history(post_request, filter_dict, order_by_fields):
-    return _generic_filter_paper(post_request, filter_dict, order_by_fields, 'paper__')
+def filter_paper_history(post_request, filter_args, filter_kwargs, order_by_fields):
+    return _generic_filter_paper(post_request, filter_args, filter_kwargs, order_by_fields, 'paper__')
 
 
-def filter_paper(post_request, filter_dict, order_by_fields):
-    return _generic_filter_paper(post_request, filter_dict, order_by_fields, '')
+def filter_paper(post_request, filter_args, filter_kwargs, order_by_fields):
+    return _generic_filter_paper(post_request, filter_args, filter_kwargs, order_by_fields, '')
