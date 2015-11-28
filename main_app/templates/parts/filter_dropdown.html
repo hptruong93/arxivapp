@@ -5,7 +5,7 @@
     <li><a href="#">Physics</a></li>
     <li><a href="#">Chemistry</a></li>
   </ul> -->
-    <button class="btn btn-default" type="button" onclick="sort_and_filter_toggle()"> Sort and filters </button>
+    <button class="btn btn-default" type="button" onclick="sort_and_filter_toggle()"> Filters and Sort </button>
 
     <div id="sort_and_filter" style="display: none;">
         <form role="form" action="{{ request.path }}" method="post">
@@ -23,21 +23,21 @@
                 <label for="author">Author:</label>
                 <input type="text" class="form-control" name="filter_author_full_name" value="{{ filters_sorts.author_full_name }}">
             </div>
-            <div class="form-group col-sm-6">
+            <div class="form-group col-sm-12">
                 <label for="category">Category:</label>
                 <input type="text" class="form-control" name="filter_category" placeholder="Category code/name" value="{{ filters_sorts.category }}">
             </div>
 
-            <div class="form-group col-sm-3">
+            <div class="form-group col-sm-6">
                 <label for="date">From date:</label>
                 <input type="text" class="form-control" name="filter_from_date" placeholder="dd/mm/yyyy" value="{{ filters_sorts.from_date }}">
             </div>
-            <div class="form-group col-sm-3">
+            <div class="form-group col-sm-6">
                 <label for="date">To date:</label>
                 <input type="text" class="form-control" name="filter_to_date" placeholder="dd/mm/yyyy" value="{{ filters_sorts.to_date }}">
             </div>
 
-            <div class="form-group col-sm-12">
+            <div class="form-group col-sm-6">
                 <label for="sort_by">Sort by (in order of sorting):</label>
                 <select name="sort_by_1">
                     <option value="sort_by_none"> None </option>
@@ -50,8 +50,17 @@
                     <option value="sort_by_title"> Title </option>
                 </select>
             </div>
+            <div class="form-group col-sm-6">
+                {% if filters_sorts.filter_make_default %}
+                    <label><input type="checkbox" name="filter_make_default" value="make_default" checked> Make this default home filter</label>
+                {% else %}
+                    <label><input type="checkbox" name="filter_make_default" value="make_default"> Make this default home filter</label>
+                {% endif %}
+            </div>
 
-            <button type="submit" class="btn btn-default"> Filter and Sort </button>
+            <div class="form-group col-sm-12">
+                <button type="submit" class="btn btn-default"> Filters and Sort </button>
+            </div>
         </form>
     </div>
     <br><br><br>

@@ -1,7 +1,37 @@
+from django.contrib.auth import models as auth_models
 from django.db import models
 import abstract_models
 
 # Create your models here.
+
+class UserFilterSort(models.Model):
+    user = models.ForeignKey(auth_models.User)
+    
+    title = models.CharField(max_length = 200, null = True)
+
+    author_full_name = models.CharField(max_length = 50, null = True)
+    category = models.CharField(max_length = 50, null = True)
+
+    from_date = models.DateTimeField(null = True)
+    to_date = models.DateTimeField(null = True)
+
+    sort_by_1 = models.CharField(max_length = 20, null = True)
+    sort_by_2 = models.CharField(max_length = 20, null = True)
+
+    is_default = models.BooleanField(default = False)
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            try:
+                default_filter = UserFilterSort.objects.get(is_default = True)
+                if self != default_filter:
+                    default_filter.is_default = False
+                    default_filter.save()
+            except UserFilterSort.DoesNotExist:
+                pass
+        super(UserFilterSort, self).save(*args, **kwargs)
+
+
 class Author(models.Model):
     first_name = models.CharField(max_length=250)
     middle_name = models.CharField(max_length=50, null = True)

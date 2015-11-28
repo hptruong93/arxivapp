@@ -4,16 +4,21 @@
 
     <div class="col-sm-12 portfolio-item">
         <h4> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a> </h4>
+        <div>
         By: 
         {% for author in article.all_authors %}
             <a href="{% url 'author' author.id %}">{{ author }}</a>,
         {% endfor %}
-        <br> On: {{ article.created_date|date:"DATETIME_FORMAT" }}
-        <br> In: 
-        {% for category in article.all_categories %}
-            <a href="{% url 'category' category.code %}">{{ category }}</a>,
-        {% endfor %}
-        <br> 
+        </div>
+        <div class="text-right">
+            On: {{ article.created_date|date:"DATETIME_FORMAT" }}
+        </div>
+        <div>
+            In: 
+            {% for category in article.all_categories %}
+                <a href="{% url 'category' category.code %}">{{ category }}</a>,
+            {% endfor %}
+        </div>
 
         <div class="text-container">
             <div class="show-more"> <a href="#">Full Abstract</a> </div>

@@ -25,7 +25,9 @@ def _general_filter_check(request):
 
     filter_data = {}
     if request.method == "POST":
-        filter_data = paper_filter_sorts.filter_paper(request.POST, filter_args, filter_dict, order_by_fields)
+        filter_data = paper_filter_sorts.filter_paper(request, filter_args, filter_dict, order_by_fields)
+    else:
+        filter_data = paper_filter_sorts.filter_paper_default(request, filter_args, filter_dict, order_by_fields)
 
     return filter_args, filter_dict, order_by_fields, filter_data
 
@@ -190,7 +192,7 @@ def history(request):
 
     filter_data = {}
     if request.method == "POST":
-        filter_data = paper_filter_sorts.filter_paper_history(request.POST, filter_args, filter_dict, order_by_fields)
+        filter_data = paper_filter_sorts.filter_paper_history(request, filter_args, filter_dict, order_by_fields)
 
     paper_history = _query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_args, filter_dict, order_by_fields)
     articles = [paper_item.paper for paper_item in paper_history]
