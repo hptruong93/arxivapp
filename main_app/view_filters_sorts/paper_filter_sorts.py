@@ -43,8 +43,15 @@ def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_
             filter_kwargs['%sauthors__last_name__icontains' % prepend_name] = split[-1]
 
     if extracted_params['category']:
-        filter_args.append(db_models.Q(**{'%scategories__name__icontains' % prepend_name : extracted_params['category']}) \
-                        | db_models.Q(**{'%scategories__code__icontains' % prepend_name : extracted_params['category']}))
+        split = []
+        if ',' in extracted_params['category']:
+            split = extracted_params['category'].split(',')
+        else:
+            split = [extracted_params['category']]
+
+        for category in split:
+            appending = db_models.Q(**{'%scategories__code__icontains' % prepend_name : category})
+            filter_args.append(appending)
 
     if extracted_params['from_date']:
         filter_kwargs['%screated_date__gte' % prepend_name] = extracted_params['from_date']

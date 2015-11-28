@@ -18,7 +18,7 @@ from main_app import central_config as config
 from main_app.utils import utils_general
 # Create your views here.
 
-def _general_filter_check(request):
+def _general_filter_check(request, default_filter = False):
     filter_args = []
     filter_dict = {}
     order_by_fields = ['-created_date', 'title']
@@ -26,7 +26,7 @@ def _general_filter_check(request):
     filter_data = {}
     if request.method == "POST":
         filter_data = paper_filter_sorts.filter_paper(request, filter_args, filter_dict, order_by_fields)
-    else:
+    elif default_filter:
         filter_data = paper_filter_sorts.filter_paper_default(request, filter_args, filter_dict, order_by_fields)
 
     return filter_args, filter_dict, order_by_fields, filter_data
@@ -34,8 +34,11 @@ def _general_filter_check(request):
 def _query_filter(query, filter_args, filter_dict, order_by_fields):
     output = query
 
-    if filter_args:
-        output = output.filter(*filter_args)
+    for arg in filter_args:
+        if type(arg) is dict:
+            output = output.filter(**arg)
+        else:
+            output = output.filter(arg)
 
     if filter_dict:
         output = output.filter(**filter_dict)
@@ -133,7 +136,7 @@ def login(request, link = None):
 
 @auth_decorators.login_required
 def index(request):
-    filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request)
+    filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request, default_filter = True)
     articles = _query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
     return _render_papers(request, articles, {'filters_sorts' : filter_data})
 
