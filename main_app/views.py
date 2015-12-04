@@ -9,6 +9,7 @@ from django.contrib.auth import decorators as auth_decorators
 from django.core import urlresolvers
 from django.core import paginator
 from django.db import models as db_models
+from django.db import IntegrityError
 
 
 from main_app import models as main_app_models
@@ -95,20 +96,28 @@ def _to_login(request, message = ''):
             'message' : message
         })
 
+def _to_signup(request, message = ''):
+    return shortcuts.render(request, 'signup.html', {
+            'message' : message
+        })
+
 ###############################################################################################################################
 
 def signup(request):
     if request.method == 'POST':
         try:
             email = request.POST['user_email']
+            username = email[:config.MAX_USERNAME_LEN]
             password = request.POST['user_password']
 
-            user = auth.models.User.objects.create_user(username=email, password=password, email = email)
+            user = auth.models.User.objects.create_user(username=username, password=password, email = email)
             user.save()
 
             return http.HttpResponseRedirect(urlresolvers.reverse('login'))
         except KeyError:
             return shortcuts.render(request, 'signup.html')
+        except IntegrityError:
+            return _to_signup(request, "Username existed...")
     else:
         return shortcuts.render(request, 'signup.html')
 
@@ -116,9 +125,10 @@ def login(request, link = None):
     if request.method == 'POST':
         try:
             email = request.POST['user_email']
+            username = email[:config.MAX_USERNAME_LEN]
             password = request.POST['user_password']
 
-            user = auth.authenticate(username=email, password=password, email = email)
+            user = auth.authenticate(username=username, password=password, email = email)
             if user is not None:
                 auth.login(request, user)
 
