@@ -144,6 +144,14 @@ def login(request, link = None):
     else:
         return _to_login(request)
 
+def logout(request):
+    auth.logout(request)
+    return http.HttpResponseRedirect(urlresolvers.reverse('index'))
+
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
+
 @auth_decorators.login_required
 def index(request):
     filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request, default_filter = True)
