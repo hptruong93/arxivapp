@@ -1,13 +1,14 @@
 
+import traceback
 import json
 import time
 import BaseHTTPServer
 
-from config import CONFIG as config
+import config
 import processor
 
-HOST_NAME = config['server_name']
-PORT_NUMBER = config['port']
+HOST_NAME = config.server_name
+PORT_NUMBER = config.port
 
 
 class LearningManager(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -29,7 +30,10 @@ class LearningManager(BaseHTTPServer.BaseHTTPRequestHandler):
         data_string = self.rfile.read(int(self.headers['Content-Length']))
         json_payload = json.loads(data_string)
         
-        result = processor.process(json_payload)
+        try:
+            result = processor.process(json_payload)
+        except:
+            result = traceback.format_exc()
 
         self.send_response(200)
         self.send_header("Content-type", "application/json")
@@ -37,6 +41,8 @@ class LearningManager(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(result))
 
 if __name__ == '__main__':
+    processor.initialize()
+
     server_class = BaseHTTPServer.HTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), LearningManager)
     print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)

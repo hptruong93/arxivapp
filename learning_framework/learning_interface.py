@@ -30,4 +30,4 @@ class LearningInterface(object):
 
     @abstractmethod
     def predict(self):
-        pass    
+        pass
