@@ -18,7 +18,7 @@ matrix_factorization_object = None
 
 def _return_message(status, message):
     return {
-        'status' : status,
+        'success' : status,
         'message' : message
     }
 

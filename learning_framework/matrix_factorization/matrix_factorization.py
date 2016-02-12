@@ -21,5 +21,10 @@ class MatrixFactorization(learning_interface.LearningInterface):
     def test(self):
         return "Test data"
 
-    def predict(self):
-        return "Predict data"
+    def predict(self, user_id):
+        print "user_id is {0}".format(user_id)
+        print "Predicting..."
+
+        return {
+            'ids' : ['1602.03276', '1602.03275']
+        }

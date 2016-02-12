@@ -16,80 +16,11 @@ from main_app import models as main_app_models
 from main_app.history_tracking import history_tracking
 from main_app.view_filters_sorts import paper_filter_sorts
 from main_app import central_config as config
+from main_app import view_renderer
+from main_app import recommendation_interface
 from main_app.utils import utils_general
+
 # Create your views here.
-
-def _general_filter_check(request, default_filter = False):
-    filter_args = []
-    filter_dict = {}
-    order_by_fields = ['-created_date', 'title']
-
-    filter_data = {}
-    if request.method == "POST":
-        filter_data = paper_filter_sorts.filter_paper(request, filter_args, filter_dict, order_by_fields)
-    elif default_filter:
-        filter_data = paper_filter_sorts.filter_paper_default(request, filter_args, filter_dict, order_by_fields)
-
-    return filter_args, filter_dict, order_by_fields, filter_data
-
-def _query_filter(query, filter_args, filter_dict, order_by_fields):
-    output = query
-
-    for arg in filter_args:
-        if type(arg) is dict:
-            output = output.filter(**arg)
-        else:
-            output = output.filter(arg)
-
-    if filter_dict:
-        output = output.filter(**filter_dict)
-
-    if order_by_fields:
-        output = output.order_by(*order_by_fields)
-
-    return output
-
-def _prepare_view_articles(current_user, articles, page_number):
-    """
-        Preprocess the articles with information to put on html template
-        It is important to use pagination here and leverage the lazy nature of django model
-        (i.e. only those articles on the current page are fetched from db)
-
-        Without pagination, it would be impossible to fit all papers into memory and process them.
-    """
-    pagination = paginator.Paginator(articles, config.MAX_ARTICLE_DISPLAY)
-    displayed_page_number = page_number
-
-    try:
-        articles = pagination.page(page_number)
-    except paginator.PageNotAnInteger: #Show first page
-        articles = pagination.page(1)
-        displayed_page_number = 1
-    except paginator.EmptyPage: #Otherwise show last page if page out of range
-        articles = paginator.page(pagination.num_pages)
-        displayed_page_number = pagination.num_pages
-
-    history_tracking.log_paper_surf(current_user, articles, displayed_page_number)
-
-    for article in articles:
-        article.all_authors = article.authors.all()
-        article.all_categories = article.categories.all()
-
-    return utils_general._n_group(articles, config.MAX_COLUMN_DISPLAYED), articles
-
-def _render_papers(request, articles, additional_data = None):
-    articles, paginated_articles = _prepare_view_articles(request.user, articles, request.GET.get('page'))
-
-    data = {
-        'request' : request,
-        'articles' : articles,
-        'paginated_articles' : paginated_articles
-    }
-
-    if additional_data is not None:
-        data.update(additional_data)
-
-    return shortcuts.render(request, 'index.html', data)
 
 def _to_login(request, message = ''):
     return shortcuts.render(request, 'login.html', {
@@ -105,44 +36,47 @@ def _to_signup(request, message = ''):
 
 def signup(request):
     if request.method == 'POST':
-        try:
-            email = request.POST['user_email']
-            username = email[:config.MAX_USERNAME_LEN]
-            password = request.POST['user_password']
-
-            user = auth.models.User.objects.create_user(username=username, password=password, email = email)
-            user.save()
-
-            return http.HttpResponseRedirect(urlresolvers.reverse('login'))
-        except KeyError:
-            return shortcuts.render(request, 'signup.html')
-        except IntegrityError:
-            return _to_signup(request, "Username existed...")
-    else:
         return shortcuts.render(request, 'signup.html')
 
+    try:
+        email = request.POST['user_email']
+        username = email[:config.MAX_USERNAME_LEN]
+        password = request.POST['user_password']
+
+        user = auth.models.User.objects.create_user(username=username, password=password, email = email)
+        user.save()
+
+        return http.HttpResponseRedirect(urlresolvers.reverse('login'))
+    except KeyError:
+        return shortcuts.render(request, 'signup.html')
+    except IntegrityError:
+        return _to_signup(request, "Username existed...")
+        
+
 def login(request, link = None):
-    if request.method == 'POST':
-        try:
-            email = request.POST['user_email']
-            username = email[:config.MAX_USERNAME_LEN]
-            password = request.POST['user_password']
-
-            user = auth.authenticate(username=username, password=password, email = email)
-            if user is not None:
-                auth.login(request, user)
-
-                if link is None or not link.startswith('?next='):
-                    return http.HttpResponseRedirect(urlresolvers.reverse('index'))
-                else:
-                    return http.HttpResponseRedirect(link[len('?next='):])
-            else:
-                print "Failed to auth"
-                return _to_login(request, 'Invalid credentials')
-        except KeyError:
-            return _to_login(request, 'Invalid credentials')
-    else:
+    if request.method != 'POST':
         return _to_login(request)
+
+    try:
+        email = request.POST['user_email']
+        username = email[:config.MAX_USERNAME_LEN]
+        password = request.POST['user_password']
+
+        user = auth.authenticate(username=username, password=password, email = email)
+        if user is None:
+            print "Failed to auth"
+            return _to_login(request, 'Invalid credentials')
+
+        auth.login(request, user)
+
+        if link is None or not link.startswith('?next='):
+            return http.HttpResponseRedirect(urlresolvers.reverse('index'))
+        else:
+            return http.HttpResponseRedirect(link[len('?next='):])
+
+    except KeyError:
+        return _to_login(request, 'Invalid credentials')
+
 
 def logout(request):
     auth.logout(request)
@@ -154,27 +88,29 @@ def logout(request):
 
 @auth_decorators.login_required
 def index(request):
-    filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request, default_filter = True)
-    articles = _query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-    return _render_papers(request, articles, {'filters_sorts' : filter_data})
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True)
+    articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
+    recommended_articles = recommendation_interface.index(request.user)
+
+    return view_renderer.render_papers(request, articles, recommended_articles, additional_data = {'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def author(request, author_id):
     author = shortcuts.get_object_or_404(main_app_models.Author, id = author_id)
     history_tracking.log_author_focus(request.user, author)
 
-    filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request)
-    articles = _query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_args, filter_dict, order_by_fields)
-    return _render_papers(request, articles, {'header_message' : 'All articles by %s' % author, 'filters_sorts' : filter_data})
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
+    articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_args, filter_dict, order_by_fields)
+    return view_renderer.render_papers(request, articles, additional_data = {'header_message' : 'All articles by %s' % author, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def category(request, category_code):
     category = shortcuts.get_object_or_404(main_app_models.Category, code = category_code)
     history_tracking.log_category_focus(request.user, category)
 
-    filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request)
-    articles = _query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_args, filter_dict, order_by_fields)
-    return _render_papers(request, articles, {'header_message' : 'All articles in %s' % category, 'filters_sorts' : filter_data})
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
+    articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_args, filter_dict, order_by_fields)
+    return view_renderer.render_papers(request, articles, additional_data = {'header_message' : 'All articles in %s' % category, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def paper(request, paper_id):
@@ -215,10 +151,10 @@ def history(request):
     if request.method == "POST":
         filter_data = paper_filter_sorts.filter_paper_history(request, filter_args, filter_dict, order_by_fields)
 
-    paper_history = _query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_args, filter_dict, order_by_fields)
+    paper_history = view_renderer.query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_args, filter_dict, order_by_fields)
     articles = [paper_item.paper for paper_item in paper_history]
 
-    articles, paginated_articles = _prepare_view_articles(current_user, articles, request.GET.get('page'))
+    articles, paginated_articles = view_renderer.prepare_view_articles(current_user, articles, request.GET.get('page'))
     author_history = main_app_models.AuthorHistory.objects.filter(user = current_user).order_by('author__last_name', 'author__first_name')
     category_history = main_app_models.CategoryHistory.objects.filter(user = current_user).order_by('category__code')
 
@@ -240,9 +176,9 @@ def search(request):
         search_value = request.POST['search_value']
         history_tracking.log_search(current_user, search_value)
 
-        filter_args, filter_dict, order_by_fields, filter_data = _general_filter_check(request)
-        articles_query = _query_filter(main_app_models.Paper.objects.filter(title__icontains = search_value), filter_args, filter_dict, order_by_fields)
-        articles, paginated_articles = _prepare_view_articles(current_user, articles_query, request.GET.get('page'))
+        filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
+        articles_query = view_renderer.query_filter(main_app_models.Paper.objects.filter(title__icontains = search_value), filter_args, filter_dict, order_by_fields)
+        articles, paginated_articles = view_renderer.prepare_view_articles(current_user, articles_query, request.GET.get('page'))
 
         authors = main_app_models.Author.objects.filter(full_name__icontains = search_value)
         categories = main_app_models.Category.objects.filter(db_models.Q(code__icontains = search_value) | db_models.Q(name__icontains = search_value))
