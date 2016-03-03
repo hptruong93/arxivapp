@@ -36,7 +36,7 @@ def initialize():
     matrix_factorization_object = matrix_factorization.MatrixFactorization()
 
 def process(request):
-    print request
+    print 'Serving request {0}'.format(request)
     learning_module = _get_learning_module()
 
     if 'action' not in request:
@@ -52,11 +52,11 @@ def process(request):
     try:
         calling = getattr(learning_module, action)
         
-        result = calling(*args, **kwargs)
+        result, message = calling(*args, **kwargs)
         if not result:
-            return _return_failure('Action execution failed.')
+            return _return_failure('Action execution failed.\n' + str(message))
         else:
-            return _return_success(result)
+            return _return_success(message)
     except:
         trace = traceback.format_exc()
         print trace
