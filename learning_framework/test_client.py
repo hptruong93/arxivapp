@@ -21,6 +21,11 @@ if __name__ == "__main__":
             'args' : [168, 1, 1],
             'kwargs' : {'input_load_data' : '/home/ml/arxivapp/site/arxivapp/test_data'}
         }
+    elif args.f == 'predict':
+        data = {
+            'action' : '{0}'.format(args.f),
+            'args' : [1]
+        }
     else:
         data = {
             'action' : '{0}'.format(args.f),

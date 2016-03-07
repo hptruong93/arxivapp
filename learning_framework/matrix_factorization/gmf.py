@@ -20,18 +20,21 @@ def load_data(dir):
   test = np.loadtxt(os.path.join(dir,'test.tsv'),dtype=np.int32)
 
   # 0-index it
-  idx0_user = False
-  idx0_item = False
-  if np.min(train[:,0]) == 1:
-    train[:,0] -= 1
-    valid[:,0] -= 1
-    test[:,0] -= 1
-    idx0_user = True
-  if np.min(train[:,1]) == 1:
-    train[:,1] -= 1
-    valid[:,1] -= 1
-    test[:,1] -= 1
-    idx0_item = True
+  # idx0_user = False
+  # idx0_item = False
+  # if np.min(train[:,0]) == 1:
+  #   train[:,0] -= 1
+  #   valid[:,0] -= 1
+  #   test[:,0] -= 1
+  #   idx0_user = True
+  # if np.min(train[:,1]) == 1:
+  #   train[:,1] -= 1
+  #   valid[:,1] -= 1
+  #   test[:,1] -= 1
+  #   idx0_item = True
+  #Assume 0 index since we cannot infer anything from a parse matrix
+  idx0_user = True
+  idx0_item = True
 
   train[:,2] = (train[:,2]>0)#*10
   valid[:,2] = (valid[:,2]>0)#*10
@@ -51,7 +54,7 @@ def to_mat(d, nusers, nitems):
   mat_col = scs.csc_matrix((d[:,2], (d[:,0], d[:,1])), shape=(nusers, nitems))#.toarray()
   return mat_row, mat_col
 
-def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=np.inf):
+def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=2):#np.inf):
  
   train_data_row, train_data_col = to_mat(train_data, nusers, nitems)
   valid_data_row, valid_data_col = to_mat(valid_data, nusers, nitems)
@@ -82,7 +85,7 @@ def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=np.inf):
     iter += 1
 
 
-def run(m, train_data, valid_data, test_data, nusers, nitems, T, test_only=False):
+def run(m, train_data, valid_data, test_data, nusers, nitems, T, test_only=False, save_model = False):
 
   if not test_only:
     print '+ optimize model'
@@ -94,7 +97,6 @@ def run(m, train_data, valid_data, test_data, nusers, nitems, T, test_only=False
 
   obs_data_row, _ = to_mat(np.vstack([train_data, valid_data]), nusers, nitems)
   test_data_row, _ = to_mat(test_data, nusers, nitems)
-  # set_trace()
 
   terr = m.mse_err(test_data) 
   #tprec, ntprec, num_users = m.prec_err(test_data_row, obs_data_row, T=T)
@@ -103,7 +105,7 @@ def run(m, train_data, valid_data, test_data, nusers, nitems, T, test_only=False
   tmrr, num_users = m.mrr_err(test_data_row, obs_data_row, full=True) 
   print 'test err: %f, test mrr (%d users): %f\n' % (terr, num_users, tmrr)
  
-  if not test_only:
+  if not test_only and save_model:
     print 'saving model'
     train_data_row, train_data_col = to_mat(np.vstack([train_data, valid_data]), nusers, nitems)
     m.save(train_data_row, train_data_col)

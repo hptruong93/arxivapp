@@ -39,7 +39,10 @@ def index(user, *args, **kwargs):
         ids = result['ids']
         assert type(ids) is list
 
-        return models.Paper.objects.filter(arxiv_id__in = ids) #E.g. ['1602.03276', '1602.03275']
+        query_output = models.Paper.objects.filter(arxiv_id__in = ids) #E.g. ['1602.03276', '1602.03275']
+        query_output = list(query_output)
+        query_output.sort(key = lambda x : ids.index(x.arxiv_id))
+        return query_output
     except:
         return models.Paper.objects.filter(arxiv_id__in = ())
     

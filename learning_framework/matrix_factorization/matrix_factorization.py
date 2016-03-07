@@ -29,16 +29,6 @@ index_user_map = {} #Map from user_id -> index (0-n)
 train_points = {}
 v_matrix = {}
 
-def clear_data():
-    global category_map, category_reversed_map, index_paper_map, index_paper_reversed_map, index_user_map, train_points, v_matrix
-    category_map = {}
-    category_reversed_map = {}
-    index_paper_map = {}
-    index_paper_reversed_map = {}
-    index_user_map = {}
-    train_points = {}
-    v_matrix = {}
-
 def interested_year():
     return datetime.datetime(year = datetime.datetime.now().year - 1, month = 1, day = 1)
 
@@ -80,6 +70,10 @@ def split_dict(dictionary, p_split):
     return output1, output2
 
 def map_paper_data():
+    global index_paper_map, index_paper_reversed_map
+    index_paper_map = {}
+    index_paper_reversed_map = {}
+
     doing = get_interested_papers()
     print "Collecting {0} papers".format(doing.count())
 
@@ -90,6 +84,9 @@ def map_paper_data():
         count += 1
 
 def map_user_data():
+    global index_user_map
+    index_user_map = {}
+
     print "Collecting user data"
     doing = auth_models.User.objects.all()
     count = 0
@@ -99,6 +96,9 @@ def map_user_data():
 
 def map_uv():
     print "Forming UxV matrix"
+    global train_points
+    train_points = {}
+
     def _add_point(arxiv_id, user_id, point = 1):
         if arxiv_id not in index_paper_map:
             print "Something wrong?"
@@ -124,6 +124,10 @@ def map_uv():
         _add_point(close_view.paper.arxiv_id, close_view.user_id, 2)        
 
 def map_category():
+    global category_map, category_reversed_map
+    category_map = {}
+    category_reversed_map = {}
+
     print "Collecting categories"
     index = 0
     for category in models.Category.objects.all():
@@ -137,6 +141,9 @@ def generate_v_matrix():
         Generate paper x category (i.e. v_matrix)
         matrix[paper][category] = 1 if paper belongs to that category
     """
+    global v_matrix
+    v_matrix = {}
+
     for paper in get_interested_papers():
         paper_index =  index_paper_map[paper.arxiv_id]
         for category in paper.categories.all():
@@ -172,7 +179,6 @@ class MatrixFactorization(learning_interface.LearningInterface):
         self.model = None
 
     def extract_data(self):
-        clear_data()
         self.model = None
         execution = [map_paper_data, map_user_data, map_category, generate_v_matrix, map_uv]
         for index, function in enumerate(execution):
@@ -187,8 +193,8 @@ class MatrixFactorization(learning_interface.LearningInterface):
 
         return True, "Split data"
 
-    def train(self, k, lambda_u, lambda_v, data_directory = DATA_ROOT, data_name = 'TEST', input_nneg = False, input_nitems = None, input_nusers = None, input_load_data = False):
-        nusers, nitems, train, valid, test, idx0_user, idx0_item = gmf.load_data(data_directory)
+    def train(self, k, lambda_u, lambda_v, data_name = 'TEST', input_nneg = False, input_nitems = None, input_nusers = None, input_load_data = False):
+        nusers, nitems, train, valid, test, idx0_user, idx0_item = gmf.load_data(DATA_ROOT)
         nitems = max(nitems, len(index_paper_reversed_map))
         nusers = max(nusers, len(index_user_map))
 
@@ -229,9 +235,30 @@ class MatrixFactorization(learning_interface.LearningInterface):
                 print 'resizing V to', V.shape
             self.model.load(U,V)
             print '+ U&V loaded'
-            errs = gmf.run(self.model, train, valid, test, nusers, nitems, 100, test_only=True)
+            errs = gmf.run(self.model, train, valid, test, nusers, nitems, 100, test_only=False)
 
         return True, "Train data"
+
+    def retrain(self, reload_uv = True, reload_u = False, reload_v = False):
+        #Update the data from database
+        if reload_uv:
+            map_uv()
+
+        if reload_u:
+            pass
+
+        if reload_v:
+            pass
+        
+        print_output()
+
+        ############################################
+        # Now retrain
+        nusers, nitems, train, valid, test, idx0_user, idx0_item = gmf.load_data(DATA_ROOT)
+        nitems = max(nitems, len(index_paper_reversed_map))
+        nusers = max(nusers, len(index_user_map))
+        gmf.run(self.model, train, valid, test, nusers, nitems, 100, test_only=False)
+        return True, "Retrain data"
 
     def validate(self):
         return False, "Validate data"

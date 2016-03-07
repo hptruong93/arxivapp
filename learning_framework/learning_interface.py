@@ -30,6 +30,13 @@ class LearningInterface(object):
             Magic happens here
         """
         pass
+
+    @abstractmethod
+    def retrain(self):
+        """
+            Reload data from databse or other sources, then train again
+        """
+        pass
     
     @abstractmethod
     def validate(self):
