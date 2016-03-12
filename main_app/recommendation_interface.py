@@ -25,7 +25,42 @@ def _query_result(data):
 
     return response['message']
 
-def index(user, *args, **kwargs):
+def sort(user, papers):
+    data = {
+        'action': 'sort',
+        'args': [user.id, [paper.arxiv_id for paper in papers]]
+    }
+    result = _query_result(data)
+    if result is None:
+        return papers
+    else:
+        output = []
+        sorted_papers = result['sorted']
+        uknown_papers = result['uknown']
+
+        #Sort papers according to the recommended order.
+        #Notice: Keep the order of the unknown papers the same
+        output_index, unknown_index = 0, 0
+        for index in sorted_papers:
+            while unknown_index < len(uknown_papers):
+                if result['uknown'][unknown_index] == output_index:
+                    output.append(papers[unknown_index])
+
+                    output_index += 1
+                    unknown_index += 1
+                else:
+                    break
+
+            output.append(papers[index])
+            output_index += 1
+
+
+        return output
+
+def index(user):
+    """
+        Return list of recommmended papers on the index page
+    """
     data = {
         'action' : 'predict',
         'args': [user.id]
@@ -48,10 +83,19 @@ def index(user, *args, **kwargs):
     
 
 def author(user, author_id, *args, **kwargs):
+    """
+        Return list of recommmended papers on the author page
+    """
     return models.Paper.objects.filter(arxiv_id__in = ())
 
 def category(user, category_code, *args, **kwargs):
+    """
+        Return list of recommmended papers on the category page
+    """
     return models.Paper.objects.filter(arxiv_id__in = ())
 
 def search(user, value, *args, **kwargs):
+    """
+        Return list of recommmended papers on the search page
+    """
     return models.Paper.objects.filter(arxiv_id__in = ())
