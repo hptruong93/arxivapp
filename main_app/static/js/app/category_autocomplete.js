@@ -8,7 +8,8 @@ $("#input_filter_category").tagit({
 
 $("#input_filter_category").tagit({
     autocomplete: {delay: 0, minLength: 2},
-    caseSensitive: false
+    caseSensitive: false,
+    tagLimit: 1
 });
 
 $("#input_filter_category").tagit({
