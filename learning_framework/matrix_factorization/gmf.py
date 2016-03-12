@@ -75,7 +75,7 @@ def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=2):#np.inf)
       m.save(train_data_row, train_data_col)
 
     m.update_u(train_data_row)
-    m.update_v(train_data_col)
+    #m.update_v(train_data_col)
 
     if verr/verr_old > 1.01:
       m.save(train_data_row, train_data_col)
@@ -253,7 +253,6 @@ class Model:
       return np.dot(self._U[user,:], self._V.T)
     else:
       result = np.dot(self._U[user,:], self._V.T)
-      print max(result)      
       return np.argsort(result)[-max_items:]
 
   def predict_all(self):
