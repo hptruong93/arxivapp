@@ -6,6 +6,8 @@ from main_app.view_filters_sorts import paper_filter_sorts
 from main_app import central_config as config
 from main_app.utils import utils_general
 
+from main_app import recommendation_interface
+
 def general_filter_check(request, default_filter = False):
     filter_args = []
     filter_dict = {}
@@ -53,7 +55,7 @@ def prepare_view_articles(current_user, articles, page_number, log_paper_surf = 
         articles = pagination.page(1)
         displayed_page_number = 1
     except paginator.EmptyPage: #Otherwise show last page if page out of range
-        articles = paginator.page(pagination.num_pages)
+        articles = pagination.page(pagination.num_pages)
         displayed_page_number = pagination.num_pages
 
     if log_paper_surf:
