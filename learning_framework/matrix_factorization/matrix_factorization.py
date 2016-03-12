@@ -16,6 +16,7 @@ import numpy as np
 import gmf
 import learning_interface
 
+
 DATA_ROOT = '/home/ml/arxivapp/site/arxivapp/test_data'
 #Start year
 YEAR = 2014
@@ -143,6 +144,7 @@ def generate_v_matrix():
     """
     global v_matrix
     v_matrix = {}
+    tasks = []
 
     for paper in get_interested_papers():
         paper_index =  index_paper_map[paper.arxiv_id]
@@ -154,6 +156,7 @@ def generate_v_matrix():
 
             v_matrix[paper_index][category_index] = 1
 
+
 def print_output():
     global train_points
     print "Printing to files"
@@ -162,10 +165,18 @@ def print_output():
     write_dict(category_map, os.path.join(DATA_ROOT, 'category_map.tsv'))
     write_double_dict(v_matrix, os.path.join(DATA_ROOT, 'V.tsv'))
 
-    train_points, non_train_points = split_dict(train_points, 0.8)
-    validation_points, test_points = split_dict(non_train_points, 0.5)
+    while True:
+        to_train_points, non_train_points = split_dict(train_points, 0.8)
+        if len(non_train_points) == 0 or len(to_train_points) == 0:
+            continue
+        
+        validation_points, test_points = split_dict(non_train_points, 0.5)
+        if len(validation_points) == 0 or len(test_points) == 0:
+            continue
 
-    write_double_dict(train_points, os.path.join(DATA_ROOT, 'train.tsv'))
+        break
+
+    write_double_dict(to_train_points, os.path.join(DATA_ROOT, 'train.tsv'))
     write_double_dict(validation_points, os.path.join(DATA_ROOT, 'validation.tsv'))
     write_double_dict(test_points, os.path.join(DATA_ROOT, 'test.tsv'))
 
@@ -284,6 +295,27 @@ class MatrixFactorization(learning_interface.LearningInterface):
             'ids' : list(result)
         }
 
-        # return {
-        #     'ids' : ['1602.03276', '1602.03275']
-        # }
+    def sort(self, user_id, papers):
+        if user_id not in index_user_map:
+            message = "Cannot find user with id {0}".format(user_id)
+            return False, message
+        user_index = index_user_map[user_id]
+
+        #Pair known papers with their indicies in the input
+        paper_indices = [(index, index_paper_map[paper_id]) for index, paper_id in enumerate(papers) if paper_id in index_paper_map]
+        #Leave uknown papers separated
+        uknown_papers = [index for index, paper_id in enumerate(papers) if paper_id not in index_paper_map]
+
+        if len(paper_indices) != 0:
+            #Calculate ratings for all papers in known paper
+            ratings = self.model.predict_pair(user_index, tuple(pair[1] for pair in paper_indices))
+
+            #Sort known papers by rating (descending)
+            sorted_indices = [pair_index_id[0] for (pair_index_id, rating) in sorted(zip(paper_indices, ratings), key=lambda pair: pair[1], reverse = True)]
+        else:
+            sorted_indices = []
+
+        return True, {
+            'sorted' : sorted_indices,
+            'unknown' : uknown_papers
+        }

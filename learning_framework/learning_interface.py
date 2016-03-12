@@ -58,3 +58,10 @@ class LearningInterface(object):
             Predict a range of (user, paper), or a specific paper
         """
         pass
+
+    @abstractmethod
+    def sort(self):
+        """
+            Sort a collection of papers in terms of descending preference1
+        """
+        pass
