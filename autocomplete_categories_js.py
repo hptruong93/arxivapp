@@ -1,6 +1,6 @@
 #Author: HP Truong (phuoc.truong2@mail.mcgill.ca)
 #This MUST be run in the same directory where manage.py file (django project) is
-#Usage: python csv_extract.py absolute_path_to_csv_file
+#Usage: python autocomplete_categories_js.py
 
 import os
 import sys
