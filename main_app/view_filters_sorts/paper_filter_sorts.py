@@ -49,6 +49,9 @@ def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_
         else:
             split = [extracted_params['category']]
 
+        #Only allow one category
+        split = [split[0]] if len(split) > 0 else split
+
         for category in split:
             appending = db_models.Q(**{'%scategories__code__icontains' % prepend_name : category})
             filter_args.append(appending)
