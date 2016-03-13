@@ -57,8 +57,16 @@ class Paper(models.Model):
     arxiv_id = models.CharField(max_length=30, primary_key = True)
     created_date = models.DateTimeField(null = True)
     updated_date = models.DateTimeField(null = True)
+
+    #Last time the paper appears to the system
+    #This is not to be confused with updated date. This date represents the date
+    #on which the paper appears in an update from arxiv website, not the date the paper was submitted to arxiv 
+    last_resigered_date = models.DateTimeField(null = True)
     
-    categories = models.ManyToManyField(Category) 
+    #The primary category would be the first category as pulled from arxiv
+    primary_category = models.ForeignKey(Category, null = True, related_name = 'paper_primary_categories')
+    #All categories of the paper, INCLUDING the primary category
+    categories = models.ManyToManyField(Category, related_name = 'paper_categories')
     journal_ref = models.CharField(max_length = 1000, null = True)
     
     title = models.CharField(max_length=400)
@@ -69,12 +77,6 @@ class Paper(models.Model):
     def __unicode__(self):
         return self.title
 
-class PaperHistory(abstract_models.AbstractUserHistory):
-    """
-        Logged when user clicks on a specific paper
-    """
-    paper = models.ForeignKey(Paper)
-
 class PaperSurfHistory(abstract_models.AbstractUserHistory):
     """
         Logged when user browse papers and this one shows up in the browsing screen
@@ -84,6 +86,13 @@ class PaperSurfHistory(abstract_models.AbstractUserHistory):
     paper = models.ForeignKey(Paper)
     page_number = models.IntegerField(default = 0, null = False)
     in_page_index = models.IntegerField(default = 0, null = False)
+
+class PaperHistory(abstract_models.AbstractUserHistory):
+    """
+        Logged when user clicks on a specific paper.
+        This would includes information about the index page from which the user access the paper
+    """
+    paper = models.ForeignKey(Paper)
 
 class AuthorFocusHistory(abstract_models.AbstractUserHistory):
     """

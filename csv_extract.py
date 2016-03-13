@@ -17,6 +17,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'arxivapp.settings'
 from django.db import transaction
 from main_app import models as main_app_models
 
+DATE_FORMAT = '%Y-%m-%d'
+
 def _parse_date(string):
     """
         Parse date from csv to python native datetime object.
@@ -24,8 +26,11 @@ def _parse_date(string):
         Return a python datetime object, or None if input string is empty
     """
     if len(string) > 0:
-        return datetime.strptime(string.strip(), '%Y-%m-%d')
+        return datetime.strptime(string.strip(), DATE_FORMAT)
     return None
+
+def _date_to_str(date):
+    return date.strftime(DATE_FORMAT)
 
 def _import_author(full_name):
     """
@@ -97,6 +102,9 @@ def single_import(paper):
     updated_date = paper['updated']
     updated_date = _parse_date(updated_date)
 
+    imported_date = paper['imported_date']
+    imported_date = _parse_date(imported_date)
+
     title = paper['title']
 
     authors = paper['authors'].replace('\\,', '')
@@ -116,7 +124,7 @@ def single_import(paper):
             authors[index - 1] += ' ' + full_name
             authors[index] = ''
 
-    print "Authors are %s" % authors
+    # print "Authors are %s" % authors
 
     categories = paper['categories'].split(' ')
     journal_ref = paper['journal-ref']
@@ -128,10 +136,10 @@ def single_import(paper):
     inserting_paper, is_new = main_app_models.Paper.objects.get_or_create(arxiv_id = arxiv_id)
     inserting_paper.created_date = created_date
     inserting_paper.updated_date = updated_date
+    inserting_paper.last_resigered_date = date #See models.py for more information about this field
     inserting_paper.journal_ref = journal_ref
     inserting_paper.title = title
     inserting_paper.abstract = abstract
-    #Missing link to pdf???
 
     imported_authors = map(_import_author, authors)
     imported_categories = map(_import_category, categories)
@@ -140,7 +148,10 @@ def single_import(paper):
         if author:
             inserting_paper.authors.add(author)
 
-    for category in imported_categories:
+    for index, category in enumerate(imported_categories):
+        #Assume first category to always be main category
+        if index == 0:
+            inserting_paper.primary_category = category
         inserting_paper.categories.add(category)
 
     try:
@@ -153,12 +164,14 @@ def single_import(paper):
 
 
 
-def import_data(filename, skip, bulk_size):
+def import_data(filename, skip, bulk_size, imported_date):
     """
         Import papers from a csv file
         Arg: filename: name of the input csv file
     """
-    
+    if imported_date is None:
+        imported_date = _date_to_str(datetime.now())
+
     metadata = []
     transaction.set_autocommit(False)
 
@@ -179,6 +192,7 @@ def import_data(filename, skip, bulk_size):
                 continue
 
             new_entry = {header : row[i].strip() for i, header in enumerate(metadata)}
+            new_entry['imported_date'] = imported_date
 
             single_import(new_entry)
             count_to_commit -= 1
@@ -193,11 +207,13 @@ def import_data(filename, skip, bulk_size):
     print "Done with file %s" % filename
             
 if __name__ == "__main__":
+    print "Assume this runs every day between 9pm and 10pm, and finishes before midnight"
     parser = argparse.ArgumentParser(description = 'Import data from a csv file')
     parser.add_argument('file_path', action = "store", help='Name of the csv file to import data from', type = str)
     parser.add_argument('-s', '--skip', dest='skip', default=0, help='Skip the first n lines in the data file', type = int)
     parser.add_argument('-b', '--bulk-size', dest='bulk_size', default=100, help='Import in bulk of this size. Default to 100', type = int)
+    parser.add_argument('-d', '--date', dest='imported_date', default=None, help='Date on which the data is imported (yyyy-mm-dd). Default to be today', type = int)
 
     args = parser.parse_args()
 
-    import_data(args.file_path, args.skip, args.bulk_size)
+    import_data(args.file_path, args.skip, args.bulk_size, args.date)
