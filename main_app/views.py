@@ -10,7 +10,7 @@ from django.core import urlresolvers
 from django.core import paginator
 from django.db import models as db_models
 from django.db import IntegrityError
-
+from django.db.models import Sum
 
 from main_app import models as main_app_models
 from main_app.history_tracking import history_tracking
@@ -97,17 +97,14 @@ def logout(request):
 
 @auth_decorators.login_required
 def index(request):
-    sort_strategy = recommendation_interface.get_sort_strategy(request.user.id)
-    print "Sorting strategy is {0}".format(sort_strategy)
-
     #Retrieve papers for latest tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = False)
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': utils_date.previous_business_date() })
     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-    print articles.query
     #Also sort papers in the latest tab
-    articles = recommendation_interface.sort(request.user, articles)
+    sort_strategy, articles = recommendation_interface.sort(request.user, articles)
+    articles_data = view_renderer.TabData(articles, sort_strategy)
 
 
     #Retrieve papers for cross_list tab
@@ -115,33 +112,39 @@ def index(request):
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': utils_date.previous_business_date() })
     cross_list = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-    print cross_list.query
 
     #Also sort papers in the latest tab
-    cross_list = recommendation_interface.sort(request.user, cross_list)
+    sort_strategy, cross_list = recommendation_interface.sort(request.user, cross_list)
+    cross_list_data = view_renderer.TabData(cross_list, sort_strategy)
+
 
     #Retrieve papers for recommended tab
     recommended_articles = recommendation_interface.index(request.user)
+    recommended_articles_data = view_renderer.TabData(recommended_articles, None)
 
-    return view_renderer.render_papers(request, articles, cross_list, recommended_articles, sort_strategy, additional_data = {'filters_sorts' : filter_data})
+    return view_renderer.render_papers(request, articles_data, cross_list_data, recommended_articles_data, additional_data = {'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def author(request, author_id):
+    return http.HttpResponseNotFound('Not currently supported')
+
     author = shortcuts.get_object_or_404(main_app_models.Author, id = author_id)
     history_tracking.log_author_focus(request.user, author)
 
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
     articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_args, filter_dict, order_by_fields)
-    return view_renderer.render_papers(request, articles, additional_data = {'header_message' : 'All articles by %s' % author, 'filters_sorts' : filter_data})
+    return view_renderer.render_papers(request, view_renderer.TabData(articles), additional_data = {'header_message' : 'All articles by %s' % author, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def category(request, category_code):
+    return http.HttpResponseNotFound('Not currently supported')
+
     category = shortcuts.get_object_or_404(main_app_models.Category, code = category_code)
     history_tracking.log_category_focus(request.user, category)
 
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
     articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_args, filter_dict, order_by_fields)
-    return view_renderer.render_papers(request, articles, additional_data = {'header_message' : 'All articles in %s' % category, 'filters_sorts' : filter_data})
+    return view_renderer.render_papers(request, view_renderer.TabData(articles), additional_data = {'header_message' : 'All articles in %s' % category, 'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def paper(request, paper_id):
@@ -189,11 +192,16 @@ def history(request):
         filter_data = paper_filter_sorts.filter_paper_history(request, filter_args, filter_dict, order_by_fields)
 
     paper_history = view_renderer.query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_args, filter_dict, order_by_fields)
-    articles = [paper_item.paper for paper_item in paper_history]
+    articles = list(set(paper_item.paper for paper_item in paper_history))
 
-    articles, paginated_articles = view_renderer.prepare_view_articles(current_user, articles, request.GET.get('page'), log_paper_surf = False)
-    author_history = main_app_models.AuthorHistory.objects.filter(user = current_user).order_by('author__last_name', 'author__first_name')
-    category_history = main_app_models.CategoryHistory.objects.filter(user = current_user).order_by('category__code')
+    articles, paginated_articles, _ = view_renderer.prepare_view_articles(current_user, articles, request.GET.get('page'), log_paper_surf = False)
+    
+    author_history = main_app_models.AuthorHistory.objects.filter(user = current_user)
+    author_history = author_history.values('author__id', 'author__last_name', 'author__first_name')
+    author_history = author_history.annotate(seen_count=Sum('count')).order_by('author__last_name', 'author__first_name')
+
+    category_history = main_app_models.CategoryHistory.objects.filter(user = current_user)
+    category_history = category_history.values('category__code').annotate(seen_count=Sum('count')).order_by('category__code')
 
     data = {
         'request' : request,
@@ -208,6 +216,8 @@ def history(request):
 
 @auth_decorators.login_required
 def search(request):
+    return http.HttpResponseNotFound('Not currently supported')
+
     current_user = request.user
     try:
         search_value = request.POST['search_value']

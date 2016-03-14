@@ -60,7 +60,7 @@
                             <div>
                             {% for author_history in authors %}
 
-                            <a href="{% url 'author' author_history.author.id %}"> {{ author_history.author }} (Seen {{ author_history.count }} time) </a>
+                            <a href="{% url 'author' author_history.author__id %}"> {{ author_history.author__last_name }} {{ author_history.author__first_name }} (Seen {{ author_history.seen_count }} time) </a>
                             <br>
 
                             {% endfor %}
@@ -73,7 +73,7 @@
                             <div>
                             {% for category_history in categories %}
 
-                            <a href="{% url 'category' category_history.category.code %}">{{ category_history.category }} (Seen {{ category_history.count }} time)</a>
+                            <a href="{% url 'category' category_history.category__code %}">{{ category_history.category__code }} (Seen {{ category_history.seen_count }} time)</a>
                             <br>
 
                             {% endfor %}

@@ -8,6 +8,13 @@ from main_app.utils import utils_general
 
 from main_app import recommendation_interface
 
+class TabData(object):
+    def __init__(self, articles, sort_strategy = None):
+        super(TabData, self).__init__()
+        self.articles = articles
+        self.sort_strategy = sort_strategy
+        
+
 def general_filter_check(request, default_filter = False, cross_list = False):
     filter_args = []
     filter_dict = {}
@@ -68,7 +75,10 @@ def prepare_view_articles(current_user, articles, page_number, log_paper_surf = 
 
     return utils_general._n_group(sorted_articles, config.MAX_COLUMN_DISPLAYED), sorted_articles, surf_group
 
-def render_papers(request, articles, cross_list = None, recommended_articles = None, sort_strategy = None, additional_data = None):
+def render_papers(request, articles_data, cross_list_data = None, recommended_articles_data = None, additional_data = None):
+    articles = articles_data.articles
+    sort_strategy = articles_data.sort_strategy
+
     articles, paginated_articles, surf_group = prepare_view_articles(request.user, articles, request.GET.get('page'), tab_name = 'latest', sort_strategy = sort_strategy)
     data = {
         'request' : request,
@@ -77,13 +87,18 @@ def render_papers(request, articles, cross_list = None, recommended_articles = N
         'latest_surf_group': surf_group.id
     }
 
-    if cross_list is not None:
+    if cross_list_data is not None:
+        cross_list = cross_list_data.articles
+        sort_strategy = cross_list_data.sort_strategy
+
         cross_list_articles, paginated_cross_list_articles, surf_group = prepare_view_articles(request.user, cross_list, request.GET.get('page'), tab_name = 'cross_list', sort_strategy = sort_strategy)
         data['cross_list_articles'] = cross_list_articles
         data['paginated_cross_list_articles'] = paginated_cross_list_articles
         data['cross_list_surf_group'] = surf_group.id
 
-    if recommended_articles is not None:
+    if recommended_articles_data is not None:
+        recommended_articles = recommended_articles_data.articles
+
         recommended_articles, paginated_recommended_articles, _ = prepare_view_articles(request.user, recommended_articles, request.GET.get('page'), log_paper_surf = False, tab_name = 'recommended')
         data['recommended_articles'] = recommended_articles
         data['paginated_recommended_articles'] = paginated_recommended_articles

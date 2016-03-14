@@ -12,7 +12,7 @@ headers = {'Content-type': 'application/json'}
 ARXIV_STRATEGY = 'arxiv'
 GMF_STRATEGY = 'gmf'
 
-def get_sort_strategy(user_id):
+def _get_sort_strategy(user_id):
     """
         None means the sorting facility is not available
     """
@@ -43,32 +43,33 @@ def _query_result(data):
 
 def sort(user, papers):
     """
-        Return an iterable of sorted_items
+        Return a tuple of (sort strategy, iterable of sorted_items)
+        If sort strategy is None, the input list is left untouched (i.e. no sorting involved)
     """
 
     data = {
         'action': 'sort',
         'args': [user.id, [paper.arxiv_id for paper in papers]]
     }
-    sort_strategy = get_sort_strategy(user.id)
+    sort_strategy = _get_sort_strategy(user.id)
 
     if sort_strategy == ARXIV_STRATEGY:
-        return sorted(papers, key = lambda p : p.arxiv_id)
+        return sort_strategy, sorted(papers, key = lambda p : p.arxiv_id)
     elif sort_strategy == GMF_STRATEGY:
         result = _query_result(data)
         if result is None:
-            return papers
+            return None, papers
         else:
             output = []
             sorted_papers = result['sorted']
-            uknown_papers = result['uknown']
+            uknown_papers = result['unknown']
 
             #Sort papers according to the recommended order.
             #Notice: Keep the order of the unknown papers the same
             output_index, unknown_index = 0, 0
             for index in sorted_papers:
                 while unknown_index < len(uknown_papers):
-                    if result['uknown'][unknown_index] == output_index:
+                    if result['unknown'][unknown_index] == output_index:
                         output.append(papers[unknown_index])
 
                         output_index += 1
@@ -82,7 +83,7 @@ def sort(user, papers):
 
             return sort_strategy, output
     else:
-        return papers
+        return None, papers
 
 def index(user):
     """
