@@ -21,7 +21,7 @@ def _extract_params(post_request):
 
     return output
 
-def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_by_fields, prepend_name):
+def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_by_fields, prepend_name, cross_list = False):
     SORT_FIELDS = {
         'sort_by_date' : '-%screated_date' % prepend_name,
         'sort_by_title' : '%stitle' % prepend_name
@@ -52,9 +52,17 @@ def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_
         #Only allow one category
         split = [split[0]] if len(split) > 0 else split
 
-        for category in split:
-            appending = db_models.Q(**{'%scategories__code__icontains' % prepend_name : category})
-            filter_args.append(appending)
+        if cross_list:
+            if len(split) > 0:
+                primary_category = split[0]
+                for category in split:
+                    appending = db_models.Q(**{'%scategories__code__icontains' % prepend_name : category})
+                    filter_args.append(appending)
+                filter_args.append(~db_models.Q(**{'%sprimary_category__code__icontains' % prepend_name : primary_category}))
+        else:
+            if len(split) != 0:
+                #Search for main category
+                filter_kwargs['%sprimary_category__code__icontains' % prepend_name] = split[0]
 
     if extracted_params['from_date']:
         filter_kwargs['%screated_date__gte' % prepend_name] = extracted_params['from_date']
@@ -86,11 +94,11 @@ def filter_paper_history(request, filter_args, filter_kwargs, order_by_fields):
     post_dictionary = { (k[len('filter_'):] if k.startswith('filter_') else k) : v for k, v in request.POST.iteritems() }
     return _generic_filter_paper(request.user, post_dictionary, filter_args, filter_kwargs, order_by_fields, 'paper__')
 
-def filter_paper(request, filter_args, filter_kwargs, order_by_fields):
+def filter_paper(request, filter_args, filter_kwargs, order_by_fields, cross_list):
     post_dictionary = { (k[len('filter_'):] if k.startswith('filter_') else k) : v for k, v in request.POST.iteritems() }
-    return _generic_filter_paper(request.user, post_dictionary, filter_args, filter_kwargs, order_by_fields, '')
+    return _generic_filter_paper(request.user, post_dictionary, filter_args, filter_kwargs, order_by_fields, '', cross_list)
 
-def filter_paper_default(request, filter_args, filter_kwargs, order_by_fields):
+def filter_paper_default(request, filter_args, filter_kwargs, order_by_fields, cross_list):
     try:
         default_filter = main_app_models.UserFilterSort.objects.get(user = request.user, is_default = True)
         default_filter_dict = { field : getattr(default_filter, field) for field in EXTRACTING_FILTER_FIELDS }
@@ -101,7 +109,7 @@ def filter_paper_default(request, filter_args, filter_kwargs, order_by_fields):
         if default_filter_dict.get('to_date'):
             default_filter_dict['to_date'] = utils_date.date_to_string(default_filter_dict['to_date'])            
 
-        returning = _generic_filter_paper(request.user, default_filter_dict, filter_args, filter_kwargs, order_by_fields, '')
+        returning = _generic_filter_paper(request.user, default_filter_dict, filter_args, filter_kwargs, order_by_fields, '', cross_list)
         return returning
     except main_app_models.UserFilterSort.DoesNotExist:
         return {}

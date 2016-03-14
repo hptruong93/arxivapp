@@ -3,7 +3,11 @@
     {% for article in article_group %}
 
     <div class="col-sm-12 portfolio-item">
+        {% if latest_surf_group %}
+        <h4> <a href="{% url 'paper' article.arxiv_id %}?surf_group={{ latest_surf_group }}"> {{ article.title }} </a> </h4>
+        {% else %}
         <h4> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a> </h4>
+        {% endif %}
         <div>
         By: 
         {% for author in article.all_authors %}
@@ -37,7 +41,7 @@
         {% endif %}
 
         <span class="current">
-            Page {{ paginated_articles.number }} of {{ paginated_articles.paginator.num_pages }}.
+            Page {{ paginated_articles.number }} of {{ paginated_articles.paginator.num_pages }}
         </span>
 
         {% if paginated_articles.has_next %}

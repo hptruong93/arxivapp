@@ -9,6 +9,22 @@ from main_app import models
 url = 'http://{0}:{1}'.format(config.server_name, config.port)
 headers = {'Content-type': 'application/json'}
 
+ARXIV_STRATEGY = 'arxiv'
+GMF_STRATEGY = 'gmf'
+
+def get_sort_strategy(user_id):
+    """
+        None means the sorting facility is not available
+    """
+    learning_module = _query_result({
+        'action': 'get_learning_module'
+        })
+
+    if learning_module is not None:
+        return GMF_STRATEGY
+    else:
+        return None
+
 def _query_result(data):
     try:
         result = requests.post(url, headers = headers, data = json.dumps(data))
@@ -26,36 +42,47 @@ def _query_result(data):
     return response['message']
 
 def sort(user, papers):
+    """
+        Return an iterable of sorted_items
+    """
+
     data = {
         'action': 'sort',
         'args': [user.id, [paper.arxiv_id for paper in papers]]
     }
-    result = _query_result(data)
-    if result is None:
-        return papers
+    sort_strategy = get_sort_strategy(user.id)
+
+    if sort_strategy == ARXIV_STRATEGY:
+        return sorted(papers, key = lambda p : p.arxiv_id)
+    elif sort_strategy == GMF_STRATEGY:
+        result = _query_result(data)
+        if result is None:
+            return papers
+        else:
+            output = []
+            sorted_papers = result['sorted']
+            uknown_papers = result['uknown']
+
+            #Sort papers according to the recommended order.
+            #Notice: Keep the order of the unknown papers the same
+            output_index, unknown_index = 0, 0
+            for index in sorted_papers:
+                while unknown_index < len(uknown_papers):
+                    if result['uknown'][unknown_index] == output_index:
+                        output.append(papers[unknown_index])
+
+                        output_index += 1
+                        unknown_index += 1
+                    else:
+                        break
+
+                output.append(papers[index])
+                output_index += 1
+
+
+            return sort_strategy, output
     else:
-        output = []
-        sorted_papers = result['sorted']
-        uknown_papers = result['uknown']
-
-        #Sort papers according to the recommended order.
-        #Notice: Keep the order of the unknown papers the same
-        output_index, unknown_index = 0, 0
-        for index in sorted_papers:
-            while unknown_index < len(uknown_papers):
-                if result['uknown'][unknown_index] == output_index:
-                    output.append(papers[unknown_index])
-
-                    output_index += 1
-                    unknown_index += 1
-                else:
-                    break
-
-            output.append(papers[index])
-            output_index += 1
-
-
-        return output
+        return papers
 
 def index(user):
     """

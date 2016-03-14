@@ -136,7 +136,7 @@ def single_import(paper):
     inserting_paper, is_new = main_app_models.Paper.objects.get_or_create(arxiv_id = arxiv_id)
     inserting_paper.created_date = created_date
     inserting_paper.updated_date = updated_date
-    inserting_paper.last_resigered_date = date #See models.py for more information about this field
+    inserting_paper.last_resigered_date = imported_date #See models.py for more information about this field
     inserting_paper.journal_ref = journal_ref
     inserting_paper.title = title
     inserting_paper.abstract = abstract
@@ -216,4 +216,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    import_data(args.file_path, args.skip, args.bulk_size, args.date)
+    import_data(args.file_path, args.skip, args.bulk_size, args.imported_date)

@@ -25,10 +25,14 @@ def _return_message(status, message):
 _return_success = lambda message : _return_message(True, message)
 _return_failure = lambda message : _return_message(False, message)
 
-def _get_learning_module():
+def _get_learning_module_name():
     reload(config)
-    assert hasattr(this_module, str(config.learning_module) + '_object')
-    return getattr(this_module, str(config.learning_module) + '_object')
+    return str(config.learning_module)
+
+def _get_learning_module():
+    learning_module_name = _get_learning_module_name()
+    assert hasattr(this_module, learning_module_name + '_object')
+    return getattr(this_module, learning_module_name + '_object')
 
 def initialize():
     global matrix_factorization_object
@@ -37,14 +41,19 @@ def initialize():
 
 def process(request):
     print 'Serving request {0}'.format(request)
-    learning_module = _get_learning_module()
-
     if 'action' not in request:
         return _return_failure('Has to specify an action')
+    action = request['action']
+
+
+    if action == 'get_learning_module':
+        return _return_success(_get_learning_module_name())
+
+    learning_module = _get_learning_module()
 
     args = [] if 'args' not in request else request['args']
     kwargs = {} if 'kwargs' not in request else request['kwargs']
-    action = request['action']
+    
 
     if not hasattr(learning_module, action):
         return _return_failure('Action not found {0}'.format(action))

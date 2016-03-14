@@ -43,21 +43,40 @@
             <h3 style="text-align: center"> {{ header_message }} </h3>
             {% endif %}
 
+            {% include "parts/filter_dropdown.html" %}
             <div class="tabs">
                 <ul class="tab-links">
+                    {% if articles %}
                     <li class="active"><a href="#tab1">Latest</a></li>
-                    <li><a href="#tab2">Recommended</a></li>
+                    {% endif %}
+
+                    {% if cross_list_articles %}
+                    <li><a href="#tab2">Cross list</a></li>
+                    {% endif %}
+
+                    {% if recommended_articles %}
+                    <li><a href="#tab3">Recommended</a></li>
+                    {% endif %}
                 </ul>
 
                 <div class="tab-content">
+                    {% if articles %}
                     <div id="tab1" class="tab active">
-                        {% include "parts/filter_dropdown.html" %}
                         {% include "parts/papers_display.html" %}
                     </div>
+                    {% endif %}
 
+                    {% if cross_list_articles %}
                     <div id="tab2" class="tab">
+                        {% include "parts/cross_list_display.html" %}
+                    </div>
+                    {% endif %}
+
+                    {% if recommended_articles %}
+                    <div id="tab3" class="tab">
                         {% include "parts/recommended_papers_display.html" %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

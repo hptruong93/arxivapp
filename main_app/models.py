@@ -77,15 +77,29 @@ class Paper(models.Model):
     def __unicode__(self):
         return self.title
 
+
 class PaperSurfHistory(abstract_models.AbstractUserHistory):
     """
         Logged when user browse papers and this one shows up in the browsing screen
         The difference with regular PaperHistory is that the user does not have to click
         on the paper for this to be logged
     """
+    page_number = models.IntegerField()
+
+    #E.g.: latest, cross-list, replacement, recommended...
+    tab_name = models.CharField(max_length = 100)
+
+    #Recommendation strategy used by this group of displayed paper
+    #E.g.: arxiv, gmf
+    strategy = models.CharField(max_length = 100, default = 'arxiv', null = True)
+
+class IndexedPaper(models.Model):
+    """
+        This represents the paper appearing on a page when user is browsing the page.
+    """
     paper = models.ForeignKey(Paper)
-    page_number = models.IntegerField(default = 0, null = False)
-    in_page_index = models.IntegerField(default = 0, null = False)
+    in_page_index = models.IntegerField()
+    surf_group = models.ForeignKey(PaperSurfHistory)
 
 class PaperHistory(abstract_models.AbstractUserHistory):
     """
@@ -93,6 +107,8 @@ class PaperHistory(abstract_models.AbstractUserHistory):
         This would includes information about the index page from which the user access the paper
     """
     paper = models.ForeignKey(Paper)
+    surf_group = models.ForeignKey(PaperSurfHistory, null = True)
+
 
 class AuthorFocusHistory(abstract_models.AbstractUserHistory):
     """

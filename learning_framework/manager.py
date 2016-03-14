@@ -32,10 +32,12 @@ class LearningManager(BaseHTTPServer.BaseHTTPRequestHandler):
         
         try:
             result = processor.process(json_payload)
+            status_code = 200
         except:
             result = traceback.format_exc()
+            status_code = 500
 
-        self.send_response(200)
+        self.send_response(status_code)
         self.send_header("Content-type", "application/json")
         self.end_headers()
         self.wfile.write(json.dumps(result))

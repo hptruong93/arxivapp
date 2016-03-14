@@ -19,6 +19,7 @@ from main_app import central_config as config
 from main_app import view_renderer
 from main_app import recommendation_interface
 from main_app.utils import utils_general
+from main_app.utils import utils_date
 
 # Create your views here.
 
@@ -86,13 +87,43 @@ def logout(request):
 ###############################################################################################################################
 ###############################################################################################################################
 
+# @auth_decorators.login_required
+# def original_index(request):
+#     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True)
+#     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
+#     recommended_articles = recommendation_interface.index(request.user)
+
+#     return view_renderer.render_papers(request, articles, recommended_articles, additional_data = {'filters_sorts' : filter_data})
+
 @auth_decorators.login_required
 def index(request):
-    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True)
+    sort_strategy = recommendation_interface.get_sort_strategy(request.user.id)
+    print "Sorting strategy is {0}".format(sort_strategy)
+
+    #Retrieve papers for latest tab
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = False)
+    #Only looking for papers from yesterday
+    filter_dict.update({ 'last_resigered_date__gte': utils_date.previous_business_date() })
     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
+    print articles.query
+    #Also sort papers in the latest tab
+    articles = recommendation_interface.sort(request.user, articles)
+
+
+    #Retrieve papers for cross_list tab
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = True)
+    #Only looking for papers from yesterday
+    filter_dict.update({ 'last_resigered_date__gte': utils_date.previous_business_date() })
+    cross_list = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
+    print cross_list.query
+
+    #Also sort papers in the latest tab
+    cross_list = recommendation_interface.sort(request.user, cross_list)
+
+    #Retrieve papers for recommended tab
     recommended_articles = recommendation_interface.index(request.user)
 
-    return view_renderer.render_papers(request, articles, recommended_articles, additional_data = {'filters_sorts' : filter_data})
+    return view_renderer.render_papers(request, articles, cross_list, recommended_articles, sort_strategy, additional_data = {'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def author(request, author_id):
@@ -117,7 +148,13 @@ def paper(request, paper_id):
     paper = shortcuts.get_object_or_404(main_app_models.Paper, pk = paper_id)
     current_user = request.user
 
-    paper_history_record, new_paper = history_tracking.log_paper(current_user, paper)
+    surf_group = None
+    if request.method == "GET":
+        if 'surf_group' in request.GET:
+            surf_group_id = request.GET['surf_group']
+            surf_group = shortcuts.get_object_or_404(main_app_models.PaperSurfHistory, pk = int(surf_group_id))
+
+    paper_history_record, new_paper = history_tracking.log_paper(current_user, paper, surf_group)
     history_tracking.log_authors(current_user, paper)
     history_tracking.log_categories(current_user, paper)
 
@@ -154,7 +191,7 @@ def history(request):
     paper_history = view_renderer.query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_args, filter_dict, order_by_fields)
     articles = [paper_item.paper for paper_item in paper_history]
 
-    articles, paginated_articles = view_renderer.prepare_view_articles(current_user, articles, request.GET.get('page'))
+    articles, paginated_articles = view_renderer.prepare_view_articles(current_user, articles, request.GET.get('page'), log_paper_surf = False)
     author_history = main_app_models.AuthorHistory.objects.filter(user = current_user).order_by('author__last_name', 'author__first_name')
     category_history = main_app_models.CategoryHistory.objects.filter(user = current_user).order_by('category__code')
 
