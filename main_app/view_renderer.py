@@ -75,7 +75,7 @@ def prepare_view_articles(current_user, articles, page_number, log_paper_surf = 
 
     return utils_general._n_group(sorted_articles, config.MAX_COLUMN_DISPLAYED), sorted_articles, surf_group
 
-def render_papers(request, articles_data, cross_list_data = None, recommended_articles_data = None, additional_data = None):
+def render_papers(request, articles_data, cross_list_data = None, replacement_data = None, recommended_articles_data = None, additional_data = None):
     articles = articles_data.articles
     sort_strategy = articles_data.sort_strategy
 
@@ -95,6 +95,15 @@ def render_papers(request, articles_data, cross_list_data = None, recommended_ar
         data['cross_list_articles'] = cross_list_articles
         data['paginated_cross_list_articles'] = paginated_cross_list_articles
         data['cross_list_surf_group'] = surf_group.id
+
+    if replacement_data is not None:
+        replacement = replacement_data.articles
+        sort_strategy = replacement_data.sort_strategy
+
+        replacement_articles, paginated_replacement_articles, surf_group = prepare_view_articles(request.user, replacement, request.GET.get('page'), tab_name = 'replacement', sort_strategy = sort_strategy)
+        data['replacement_articles'] = replacement_articles
+        data['paginated_replacement_articles'] = paginated_replacement_articles
+        data['replacement_surf_group'] = surf_group.id
 
     if recommended_articles_data is not None:
         recommended_articles = recommended_articles_data.articles

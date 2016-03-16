@@ -46,37 +46,36 @@
             {% include "parts/filter_dropdown.html" %}
             <div class="tabs">
                 <ul class="tab-links">
-                    {% if articles %}
                     <li class="active"><a href="#tab1">Latest</a></li>
-                    {% endif %}
-
-                    {% if cross_list_articles %}
                     <li><a href="#tab2">Cross list</a></li>
-                    {% endif %}
-
-                    {% if recommended_articles %}
-                    <li><a href="#tab3">Recommended</a></li>
-                    {% endif %}
+                    <li><a href="#tab3">Replacement</a></li>
+                    <!-- <li><a href="#tab4">Recommended</a></li> -->
                 </ul>
 
                 <div class="tab-content">
-                    {% if articles %}
                     <div id="tab1" class="tab active">
+                    {% if articles %}
                         {% include "parts/papers_display.html" %}
-                    </div>
                     {% endif %}
-
-                    {% if cross_list_articles %}
+                    </div>
+                    
                     <div id="tab2" class="tab">
+                    {% if cross_list_articles %}
                         {% include "parts/cross_list_display.html" %}
-                    </div>
                     {% endif %}
-
-                    {% if recommended_articles %}
+                    </div>
+                    
                     <div id="tab3" class="tab">
-                        {% include "parts/recommended_papers_display.html" %}
-                    </div>
+                    {% if replacement_articles %}
+                        {% include "parts/replacement_display.html" %}
                     {% endif %}
+                    </div>
+
+                    <!-- <div id="tab4" class="tab">
+                    {% if recommended_articles %}
+                        {% include "parts/recommended_papers_display.html" %}
+                    {% endif %}
+                    </div> -->
                 </div>
             </div>
         </div>

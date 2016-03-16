@@ -97,12 +97,17 @@ def logout(request):
 
 @auth_decorators.login_required
 def index(request):
+    today = utils_date.get_today()
+
     #Retrieve papers for latest tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = False)
     #Only looking for papers from yesterday
-    filter_dict.update({ 'last_resigered_date__gte': utils_date.previous_business_date() })
+    filter_dict.update({ 'last_resigered_date__gte': today })
+    filter_dict.update({ 'created_date__gte': today })
+    order_by_fields = ['arxiv_id']
     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-    #Also sort papers in the latest tab
+
+    #Also sort papers in this tab
     sort_strategy, articles = recommendation_interface.sort(request.user, articles)
     articles_data = view_renderer.TabData(articles, sort_strategy)
 
@@ -110,19 +115,32 @@ def index(request):
     #Retrieve papers for cross_list tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = True)
     #Only looking for papers from yesterday
-    filter_dict.update({ 'last_resigered_date__gte': utils_date.previous_business_date() })
+    filter_dict.update({ 'last_resigered_date__gte': today })
+    order_by_fields = ['arxiv_id']
     cross_list = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
 
-    #Also sort papers in the latest tab
+    #Also sort papers in this tab
     sort_strategy, cross_list = recommendation_interface.sort(request.user, cross_list)
     cross_list_data = view_renderer.TabData(cross_list, sort_strategy)
 
 
-    #Retrieve papers for recommended tab
-    recommended_articles = recommendation_interface.index(request.user)
-    recommended_articles_data = view_renderer.TabData(recommended_articles, None)
+    #Retrieve papers for replacement tab
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = False)
+    #Only looking for papers from yesterday
+    filter_dict.update({ 'last_resigered_date__gte': today, 'created_date__lt' : today })
+    replacement = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
+    
+    #Also sort papers in this tab
+    sort_strategy, replacement = recommendation_interface.sort(request.user, replacement)
+    replacement_data = view_renderer.TabData(replacement, sort_strategy)
 
-    return view_renderer.render_papers(request, articles_data, cross_list_data, recommended_articles_data, additional_data = {'filters_sorts' : filter_data})
+
+    #Retrieve papers for recommended tab
+    # recommended_articles = recommendation_interface.index(request.user)
+    # recommended_articles_data = view_renderer.TabData(recommended_articles, None)
+    recommended_articles_data = None #Disabled for now
+
+    return view_renderer.render_papers(request, articles_data, cross_list_data, replacement_data, recommended_articles_data, additional_data = {'filters_sorts' : filter_data})
 
 @auth_decorators.login_required
 def author(request, author_id):
