@@ -2,6 +2,8 @@ import requests
 import json
 import os
 import imp
+import random
+import datetime
 
 config = imp.load_source('config', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'learning_framework', 'config.py'))
 from main_app import models
@@ -14,16 +16,22 @@ GMF_STRATEGY = 'gmf'
 
 def _get_sort_strategy(user_id):
     """
+        We randomize strategy based on user_id and date
         None means the sorting facility is not available
     """
-    learning_module = _query_result({
-        'action': 'get_learning_module'
-        })
+    random.seed(str(user_id) + str(datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)))
 
-    if learning_module is not None:
-        return GMF_STRATEGY
+    if bool(random.getrandbits(1)):
+        return ARXIV_STRATEGY
     else:
-        return None
+        learning_module = _query_result({
+            'action': 'get_learning_module'
+            })
+
+        if learning_module is not None:
+            return GMF_STRATEGY
+        else:
+            return None
 
 def _query_result(data):
     try:
@@ -36,7 +44,7 @@ def _query_result(data):
 
     response = result.json()
     if not response['success']:
-        raise Exception(response['message'])
+        print "Encountered exception from server\n{0}".format(response['message'])
         return None
 
     return response['message']

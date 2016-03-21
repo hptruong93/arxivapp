@@ -15,16 +15,16 @@ class TabData(object):
         self.sort_strategy = sort_strategy
         
 
-def general_filter_check(request, default_filter = False, cross_list = False):
+def general_filter_check(request, default_filter = False, filter_type = 'main'):
     filter_args = []
     filter_dict = {}
     order_by_fields = ['-created_date', 'title']
 
     filter_data = {}
     if request.method == "POST":
-        filter_data = paper_filter_sorts.filter_paper(request, filter_args, filter_dict, order_by_fields, cross_list)
+        filter_data = paper_filter_sorts.filter_paper(request, filter_args, filter_dict, order_by_fields, filter_type)
     elif default_filter:
-        filter_data = paper_filter_sorts.filter_paper_default(request, filter_args, filter_dict, order_by_fields, cross_list)
+        filter_data = paper_filter_sorts.filter_paper_default(request, filter_args, filter_dict, order_by_fields, filter_type)
 
     return filter_args, filter_dict, order_by_fields, filter_data
 

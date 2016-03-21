@@ -100,12 +100,13 @@ def index(request):
     today = utils_date.get_today()
 
     #Retrieve papers for latest tab
-    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = False)
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'main')
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today })
     filter_dict.update({ 'created_date__gte': today })
     order_by_fields = ['arxiv_id']
     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
+    # print articles.query
 
     #Also sort papers in this tab
     sort_strategy, articles = recommendation_interface.sort(request.user, articles)
@@ -113,11 +114,12 @@ def index(request):
 
 
     #Retrieve papers for cross_list tab
-    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = True)
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'cross_list')
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today })
     order_by_fields = ['arxiv_id']
     cross_list = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
+    # print cross_list.query
 
     #Also sort papers in this tab
     sort_strategy, cross_list = recommendation_interface.sort(request.user, cross_list)
@@ -125,10 +127,11 @@ def index(request):
 
 
     #Retrieve papers for replacement tab
-    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, cross_list = False)
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = '')
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today, 'created_date__lt' : today })
     replacement = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
+    # print replacement.query
     
     #Also sort papers in this tab
     sort_strategy, replacement = recommendation_interface.sort(request.user, replacement)

@@ -31,8 +31,16 @@ def previous_business_date(date = datetime.datetime.now().replace(hour=0, minute
     return date
 
 def get_today():
-    time_now = datetime.datetime.now()
-    if time_now.hour < 22:
+    time_now = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    hour_now = time_now.hour
+
+    if time_now.weekday() > 4:
+        while time_now.weekday() > 4:
+            time_now -= datetime.timedelta(days = 1)
+        return time_now
+
+
+    if hour_now < 22:
         return previous_business_date(count_back = 0)
     else:
         time_now = time_now.replace(hour=0, minute=0, second=0, microsecond=0)
