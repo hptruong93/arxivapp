@@ -106,7 +106,7 @@ def index(request):
     filter_dict.update({ 'created_date__gte': today })
     order_by_fields = ['arxiv_id']
     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-    # print articles.query
+    print articles.query
 
     #Also sort papers in this tab
     sort_strategy, articles = recommendation_interface.sort(request.user, articles)
@@ -117,9 +117,10 @@ def index(request):
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'cross_list')
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today })
+    filter_dict.update({ 'created_date__gte': today })
     order_by_fields = ['arxiv_id']
     cross_list = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-    # print cross_list.query
+    print cross_list.query
 
     #Also sort papers in this tab
     sort_strategy, cross_list = recommendation_interface.sort(request.user, cross_list)
@@ -131,7 +132,7 @@ def index(request):
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today, 'created_date__lt' : today })
     replacement = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-    # print replacement.query
+    print replacement.query
     
     #Also sort papers in this tab
     sort_strategy, replacement = recommendation_interface.sort(request.user, replacement)

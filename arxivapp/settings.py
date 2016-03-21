@@ -75,7 +75,7 @@ CONN_MAX_AGE = None
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'America/Toronto'#'UTC'
+TIME_ZONE = 'UTC'#'America/Toronto'#'UTC'
 
 DATETIME_FORMAT = 'Y/M/d'
 
