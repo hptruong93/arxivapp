@@ -1,6 +1,8 @@
 from django import shortcuts
 from django.core import paginator
 
+import time
+
 from main_app.history_tracking import history_tracking
 from main_app.view_filters_sorts import paper_filter_sorts
 from main_app import central_config as config

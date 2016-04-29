@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from main_app import models
 
 
@@ -37,9 +39,15 @@ def _add_history_record(model, current_user, **kwargs):
 def log_paper_surf(current_user, papers, page_number, tab_name, strategy):
     surf_group = _add_history_record(models.PaperSurfHistory, current_user, page_number = page_number, tab_name = tab_name, strategy = strategy)
 
+    to_save = []
     for index, paper in enumerate(papers):
         indexed_paper = models.IndexedPaper(paper = paper, in_page_index = index, surf_group = surf_group)
-        indexed_paper.save()
+        to_save.append(indexed_paper)
+
+    #Do everything in one transaction to save time
+    with transaction.atomic():
+        for indexed_paper in to_save:
+            indexed_paper.save()
 
     paper_surf_history = models.PaperSurfHistory.objects.filter(user = current_user).order_by('-last_access')
     _remove_history(paper_surf_history, MAX_HISTORY_PAPER_SURF)
