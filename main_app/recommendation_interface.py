@@ -37,6 +37,7 @@ def _query_result(data):
     try:
         result = requests.post(url, headers = headers, data = json.dumps(data))
     except:
+        print "Could not retrieve post result from server. Returning None"
         return None
 
     if result.status_code != 200:
@@ -61,6 +62,8 @@ def sort(user, papers):
     }
     sort_strategy = _get_sort_strategy(user.id)
 
+    print "Strategy for userid {0} is {1}".format(user.id, sort_strategy)
+
     if sort_strategy == ARXIV_STRATEGY:
         return sort_strategy, sorted(papers, key = lambda p : p.arxiv_id)
     elif sort_strategy == GMF_STRATEGY:
@@ -71,6 +74,9 @@ def sort(user, papers):
             output = []
             sorted_papers = result['sorted']
             uknown_papers = result['unknown']
+
+            if len(sorted_papers) == 0: #All unknowns
+                return None, papers
 
             #Sort papers according to the recommended order.
             #Notice: Keep the order of the unknown papers the same
@@ -87,7 +93,6 @@ def sort(user, papers):
 
                 output.append(papers[index])
                 output_index += 1
-
 
             return sort_strategy, output
     else:

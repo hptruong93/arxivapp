@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 import itertools
 
 from django import shortcuts
@@ -99,44 +100,66 @@ def logout(request):
 def index(request):
     today = utils_date.get_today()
 
+
+    start = time.time()
+
     #Retrieve papers for latest tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'main')
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today })
-    filter_dict.update({ 'created_date__gte': today })
+    filter_dict.update({ 'updated_date__isnull': True })
     order_by_fields = ['arxiv_id']
     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
     print articles.query
+
+    print "View Stage 1 took {0}s".format(time.time() - start)
+    start = time.time()
 
     #Also sort papers in this tab
     sort_strategy, articles = recommendation_interface.sort(request.user, articles)
     articles_data = view_renderer.TabData(articles, sort_strategy)
 
+    print "View Stage 2 took {0}s".format(time.time() - start)
+    start = time.time()
 
     #Retrieve papers for cross_list tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'cross_list')
     #Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today })
-    filter_dict.update({ 'created_date__gte': today })
+    # filter_dict.update({ 'created_date__gte': today })
+    filter_dict.update({ 'updated_date__isnull': True })
     order_by_fields = ['arxiv_id']
     cross_list = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
     print cross_list.query
+
+    print "View Stage 3 took {0}s".format(time.time() - start)
+    start = time.time()
 
     #Also sort papers in this tab
     sort_strategy, cross_list = recommendation_interface.sort(request.user, cross_list)
     cross_list_data = view_renderer.TabData(cross_list, sort_strategy)
 
+    print "View Stage 4 took {0}s".format(time.time() - start)
+    start = time.time()
+
 
     #Retrieve papers for replacement tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = '')
     #Only looking for papers from yesterday
-    filter_dict.update({ 'last_resigered_date__gte': today, 'created_date__lt' : today })
+    filter_dict.update({ 'last_resigered_date__gte': today })
+    filter_dict.update({ 'updated_date__isnull': False })
     replacement = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
     print replacement.query
     
+    print "View Stage 5 took {0}s".format(time.time() - start)
+    start = time.time()
+
     #Also sort papers in this tab
     sort_strategy, replacement = recommendation_interface.sort(request.user, replacement)
     replacement_data = view_renderer.TabData(replacement, sort_strategy)
+
+    print "View Stage 6 took {0}s".format(time.time() - start)
+    start = time.time()
 
 
     #Retrieve papers for recommended tab

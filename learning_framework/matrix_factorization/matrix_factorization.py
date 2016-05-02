@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'arxivapp.settings'
 from main_app import models
 from django.contrib.auth import models as auth_models
-from django.db.models import Q
+from django import db as django_db
 
 import numpy as np
 
@@ -190,6 +190,7 @@ class MatrixFactorization(learning_interface.LearningInterface):
         self.model = None
 
     def extract_data(self):
+        django_db.close_connection()
         self.model = None
         execution = [map_paper_data, map_user_data, map_category, generate_v_matrix, map_uv]
         for index, function in enumerate(execution):

@@ -27,7 +27,7 @@ def split_data():
 
 def train():
     data = {
-            'action' : '{0}'.format(args.f),
+            'action' : 'train',
             'args' : [168, 1, 1],
             'kwargs' : {'input_load_data' : '/home/ml/arxivapp/site/arxivapp/test_data'}
         }
