@@ -34,18 +34,24 @@ def previous_business_date(date = None, count_back = 1):
     return date
 
 def get_today():
-    time_now = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    time_now = datetime.datetime.now()
     hour_now = time_now.hour
+    time_now = time_now.replace(hour=0, minute=0, second=0, microsecond=0)
 
+    #If weekend (i.e. Sat or Sun)
     if time_now.weekday() > 4:
         while time_now.weekday() > 4:
             time_now -= datetime.timedelta(days = 1)
         return time_now
 
 
-    if hour_now < 22:
-        return previous_business_date(count_back = 0)
-    else:
+    #The daily paper import finishes at 2AM UTC of that day. Therefore, 
+    #if hour < 2AM then we have to show the previous date.
+    #There could be a minor difference if daylight saving is present, but it does not
+    #really affect result that much (user may have incorrect result for one hour at most).
+    if hour_now < 2:
         time_now = time_now.replace(hour=0, minute=0, second=0, microsecond=0)
         time_now += datetime.timedelta(days = 1)
         return time_now
+    else: #Otherwise, we show paper of the current date
+        return previous_business_date(count_back = 0)
