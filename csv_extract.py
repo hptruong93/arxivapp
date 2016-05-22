@@ -58,7 +58,7 @@ def _import_author(full_name):
         last_name = split[-2] + ' ' + split[-1]
         first_name = ' '.join(split[:-2])
 
-    print "Full name is %s while first and last are %s - %s" % (full_name, first_name, last_name)
+    # print "Full name is %s while first and last are %s - %s" % (full_name, first_name, last_name)
     assert len(last_name) != 0
 
     author, is_new = main_app_models.Author.objects.get_or_create(first_name = first_name, last_name = last_name)
@@ -141,12 +141,14 @@ def single_import(paper):
     inserting_paper.title = title
     inserting_paper.abstract = abstract
 
-    imported_authors = map(_import_author, authors)
+    imported_authors = [author for author in map(_import_author, authors) if author is not None]
     imported_categories = map(_import_category, categories)
 
     for author in imported_authors:
         if author:
             inserting_paper.authors.add(author)
+    ordered_authors = ','.join(map((lambda author : str(author.id)), imported_authors))
+    inserting_paper.ordered_authors = ordered_authors
 
     for index, category in enumerate(imported_categories):
         #Assume first category to always be main category
