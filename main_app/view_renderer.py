@@ -3,6 +3,7 @@ from django.core import paginator
 
 import time
 
+from main_app import models as main_app_models
 from main_app.history_tracking import history_tracking
 from main_app.view_filters_sorts import paper_filter_sorts
 from main_app import central_config as config
@@ -72,7 +73,13 @@ def prepare_view_articles(current_user, articles, page_number, log_paper_surf = 
         surf_group = history_tracking.log_paper_surf(current_user, articles, displayed_page_number, tab_name, sort_strategy)
 
     for article in sorted_articles:
-        article.all_authors = article.authors.all()
+        if len(article.ordered_authors) == 0:
+            article.all_authors = article.authors.all()
+        else:
+            all_authors = [int(author_id) for author_id in article.ordered_authors.split(',')]
+            all_authors = map(lambda author_id : shortcuts.get_object_or_404(main_app_models.Author, id = author_id), all_authors)
+            article.all_authors = all_authors
+
         article.all_categories = article.categories.all()
 
     return utils_general._n_group(sorted_articles, config.MAX_COLUMN_DISPLAYED), sorted_articles, surf_group
@@ -81,6 +88,8 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
     articles = articles_data.articles
     sort_strategy = articles_data.sort_strategy
 
+    start = time.time()
+
     articles, paginated_articles, surf_group = prepare_view_articles(request.user, articles, request.GET.get('page'), tab_name = 'latest', sort_strategy = sort_strategy)
     data = {
         'request' : request,
@@ -88,6 +97,9 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         'paginated_articles' : paginated_articles,
         'latest_surf_group': surf_group.id
     }
+
+    print "Stage 1 {0}".format(time.time() - start)
+    start = time.time()
 
     if cross_list_data is not None:
         cross_list = cross_list_data.articles
@@ -98,6 +110,9 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         data['paginated_cross_list_articles'] = paginated_cross_list_articles
         data['cross_list_surf_group'] = surf_group.id
 
+    print "Stage 2 {0}".format(time.time() - start)
+    start = time.time()
+
     if replacement_data is not None:
         replacement = replacement_data.articles
         sort_strategy = replacement_data.sort_strategy
@@ -107,6 +122,9 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         data['paginated_replacement_articles'] = paginated_replacement_articles
         data['replacement_surf_group'] = surf_group.id
 
+    print "Stage 3 {0}".format(time.time() - start)
+    start = time.time()
+
     if recommended_articles_data is not None:
         recommended_articles = recommended_articles_data.articles
 
@@ -114,7 +132,13 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         data['recommended_articles'] = recommended_articles
         data['paginated_recommended_articles'] = paginated_recommended_articles
 
+    print "Stage 4 {0}".format(time.time() - start)
+    start = time.time()
+
     if additional_data is not None:
         data.update(additional_data)
+
+    print "Stage 5 {0}".format(time.time() - start)
+    start = time.time()
 
     return shortcuts.render(request, 'index.html', data)

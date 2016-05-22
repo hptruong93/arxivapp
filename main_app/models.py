@@ -71,6 +71,8 @@ class Paper(models.Model):
     
     title = models.CharField(max_length=400)
     authors = models.ManyToManyField(Author)
+    ordered_authors = models.TextField(null=False, default = "")
+
     abstract = models.CharField(max_length=10000)
     link_full_text_pdf = models.CharField(max_length=700, null = True)
 
