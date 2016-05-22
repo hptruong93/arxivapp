@@ -71,6 +71,7 @@ class Paper(models.Model):
     
     title = models.CharField(max_length=400)
     authors = models.ManyToManyField(Author)
+    #Commma separated list of author ids (in order that they appear in the daily uodate)
     ordered_authors = models.TextField(null=False, default = "")
 
     abstract = models.CharField(max_length=10000)
