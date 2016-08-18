@@ -62,13 +62,13 @@ def _import_author(full_name):
     assert len(last_name) != 0
 
     author, is_new = main_app_models.Author.objects.get_or_create(first_name = first_name, last_name = last_name)
-    
+
     return author
 
 def _import_category(code):
     """
         Attempt to import a new category into database
-        Arg: category code: arxiv code of the category (e.g. physics.class-ph)
+        Arg: category code: arxiv code of the category (e.g. physics.class-ph, stat.ML, cs.AI)
         Arg: name: human readable name of the category
 
         Return the django model object (either newly created, or fetched from database if already existed)
@@ -86,7 +86,7 @@ def single_import(paper):
                             created --> date created (nullable)
                             updated --> date updated (nullable)
                             title --> paper title
-                            authors --> comma separated author full names 
+                            authors --> comma separated author full names
                             (this method will ignore anything in single brackets e.g. Williams (Jr) will be interpreted as Williams)
                             categories --> comma separated category codes
                             journal-ref --> journal reference of the paper
@@ -207,7 +207,7 @@ def import_data(filename, skip, bulk_size, imported_date):
     transaction.commit()
     transaction.set_autocommit(True)
     print "Done with file %s" % filename
-            
+
 if __name__ == "__main__":
     print "Assume this runs every day between 9pm and 10pm, and finishes before midnight"
     parser = argparse.ArgumentParser(description = 'Import data from a csv file')

@@ -37,7 +37,7 @@ def _to_signup(request, message = ''):
 ###############################################################################################################################
 
 def signup(request):
-    if request.method == 'POST':
+    if request.method != 'POST':
         return shortcuts.render(request, 'signup.html')
 
     try:
@@ -49,7 +49,7 @@ def signup(request):
         user.save()
 
         return http.HttpResponseRedirect(urlresolvers.reverse('login'))
-    except KeyError:
+    except KeyError as e:
         return shortcuts.render(request, 'signup.html')
     except IntegrityError:
         return _to_signup(request, "Username existed...")

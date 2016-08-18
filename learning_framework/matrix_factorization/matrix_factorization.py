@@ -53,6 +53,10 @@ def write_double_dict(dictionary, file_name):
                 f.write('\n')
 
 def split_dict(dictionary, p_split):
+    """
+        Randomly split a dict into two using the probability provided.
+        The first dict has p = p_split and the second has p = 1 - p_split
+    """
     output1 = {}
     output2 = {}
 
@@ -71,6 +75,9 @@ def split_dict(dictionary, p_split):
     return output1, output2
 
 def map_paper_data():
+    """
+        Generate paper id --> index and index --> paper id
+    """
     global index_paper_map, index_paper_reversed_map
     index_paper_map = {}
     index_paper_reversed_map = {}
@@ -85,6 +92,9 @@ def map_paper_data():
         count += 1
 
 def map_user_data():
+    """
+        Generate mapping from user id --> index
+    """
     global index_user_map
     index_user_map = {}
 
@@ -96,6 +106,11 @@ def map_user_data():
         count += 1
 
 def map_uv():
+    """
+        Generate UxV matrix
+        If a user views a paper, the (user, paper) value in the matrix is incremented by 1
+        If a user clicks on a paper and see it (pdf), the (user, paper) value in the matrix is incremented by 2
+    """
     print "Forming UxV matrix"
     global train_points
     train_points = {}
@@ -122,9 +137,12 @@ def map_uv():
 
     paper_close_views = models.FullPaperViewHistory.objects.filter(last_access__gte = interested_year())
     for close_view in paper_close_views:
-        _add_point(close_view.paper.arxiv_id, close_view.user_id, 2)        
+        _add_point(close_view.paper.arxiv_id, close_view.user_id, 2)
 
 def map_category():
+    """
+        Generate category --> index and index --> category map
+    """
     global category_map, category_reversed_map
     category_map = {}
     category_reversed_map = {}
@@ -137,11 +155,11 @@ def map_category():
         index += 1
 
 def generate_v_matrix():
-    print "Generating V matrix"
     """
         Generate paper x category (i.e. v_matrix)
         matrix[paper][category] = 1 if paper belongs to that category
     """
+    print "Generating V matrix"
     global v_matrix
     v_matrix = {}
     tasks = []
@@ -169,7 +187,7 @@ def print_output():
         to_train_points, non_train_points = split_dict(train_points, 0.8)
         if len(non_train_points) == 0 or len(to_train_points) == 0:
             continue
-        
+
         validation_points, test_points = split_dict(non_train_points, 0.5)
         if len(validation_points) == 0 or len(test_points) == 0:
             continue
@@ -261,7 +279,7 @@ class MatrixFactorization(learning_interface.LearningInterface):
 
         if reload_v:
             pass
-        
+
         print_output()
 
         ############################################
