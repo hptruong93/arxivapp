@@ -1,3 +1,4 @@
+import time
 import datetime
 import random
 import os
@@ -13,6 +14,9 @@ from django import db as django_db
 
 import numpy as np
 
+import config
+
+from lda import lda
 import gmf
 import learning_interface
 
@@ -121,15 +125,15 @@ def map_uv():
             return
 
         user_index = index_user_map[user_id]
-        papper_index = index_paper_map[arxiv_id]
+        paper_index = index_paper_map[arxiv_id]
 
         if user_index not in train_points:
             train_points[user_index] = {}
 
-        if papper_index in train_points[user_index]:
-            train_points[user_index][papper_index] += point
+        if paper_index in train_points[user_index]:
+            train_points[user_index][paper_index] += point
         else:
-            train_points[user_index][papper_index] = point
+            train_points[user_index][paper_index] = point
 
     paper_views = models.PaperHistory.objects.filter(last_access__gte = interested_year())
     for view in paper_views:
@@ -158,14 +162,22 @@ def generate_v_matrix():
     """
         Generate paper x category (i.e. v_matrix)
         matrix[paper][category] = 1 if paper belongs to that category
+
+        matrix[paper][lda_topic] = lda_normalized_value if the normalized value is not zero
     """
     print "Generating V matrix"
     global v_matrix
     v_matrix = {}
     tasks = []
 
-    for paper in get_interested_papers():
+    papers = get_interested_papers()
+    # LDA value
+    # lda_result = lda.extract_lda(papers)
+
+    for paper in papers:
         paper_index =  index_paper_map[paper.arxiv_id]
+
+        # Category part of the matrix
         for category in paper.categories.all():
             category_index = category_map[category.code]
 
@@ -173,6 +185,17 @@ def generate_v_matrix():
                 v_matrix[paper_index] = {}
 
             v_matrix[paper_index][category_index] = 1
+
+        # LDA part of the matrix
+        # for topic_index, topic_value in enumerate(lda_result[paper_index]):
+        #     if abs(topic_value) < 0.0001: # Is approximately zero?
+        #         continue
+
+        #     if paper_index not in v_matrix:
+        #         v_matrix[paper_index] = {}
+
+        #     v_matrix[paper_index][config.CATEGORY_COUNT + topic_index] = topic_value
+
 
 
 def print_output():
@@ -208,6 +231,8 @@ class MatrixFactorization(learning_interface.LearningInterface):
         self.model = None
 
     def extract_data(self):
+        lda.load_vocabulary()
+
         django_db.close_connection()
         self.model = None
         execution = [map_paper_data, map_user_data, map_category, generate_v_matrix, map_uv]
@@ -308,7 +333,7 @@ class MatrixFactorization(learning_interface.LearningInterface):
             return False, "Model is None"
 
         result = self.model.predict_user(user_index, max_items = 10)
-        result = [index_paper_reversed_map[papper_index] for papper_index in result if papper_index in index_paper_reversed_map]
+        result = [index_paper_reversed_map[paper_index] for paper_index in result if paper_index in index_paper_reversed_map]
 
         return True, {
             'ids' : list(result)
