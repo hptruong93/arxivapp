@@ -1,21 +1,25 @@
 
+import uuid
 import subprocess
 import shutil
+import sys
 import os
 import re
 import collections
 
 import numpy as np
 
-_TEMP_DIR = "/tmp/lda_temp"
+_TEMP_DIR = lambda : "/tmp/lda_temp_{0}".format(uuid.uuid4().hex)
 _GSL_LIB_PATH = "/home/ml/arxivapp/site/arxivapp/lda/gsl/gsl_installed/lib"
 _LDA_BINARY = "/home/ml/arxivapp/site/arxivapp/lda/lda_topics/lda"
 _VOCABULARY_PATH = "/home/ml/arxivapp/site/arxivapp/lda/lda_topics/vocab.dat"
 
-_DATA_FILE = os.path.join(_TEMP_DIR, 'data.dat')
-_OUTPUT_MATRIX_FILE = os.path.join(_TEMP_DIR, 'ldafit-test.topics')
+_DATA_FILE = 'data.dat' # Relative to temp dir
+_OUTPUT_MATRIX_FILE = 'ldafit-test.topics' # Relative to temp dir
 
 _TOPIC_COUNT = 250
+
+MAX_PROCESSING_LENGTH = sys.maxint
 
 vocabulary_list = None
 vocabulary_dict = None
@@ -45,9 +49,10 @@ def _word_count(word_list):
 def _word_counter_to_matrix_text(word_counter):
     output = [(vocabulary_dict[word], count) for word, count in word_counter.items()]
 
-    # output = sorted(output) # Optional
+    # output = sorted(output) # Optional sorting
     output = map(lambda x : '{0}:{1}'.format(x[0], x[1]), output)
-    return '{0} {1}'.format(len(output), ' '.join(output))
+
+    return '{0} {1}'.format(len(output), ' '.join(output)) if len(output) > 0 else ''
 
 def _word_counter_to_matrix_row(word_counter):
     """
@@ -70,28 +75,39 @@ def _to_data_file(converted_papers):
             where n is the total amount of distinct terms encountered (w1, w2, ..., wn)
             w1, w2, w3, ..., wn are the distinct terms encountered
             c1, c2, c3, ..., cn are the frequencies of occurrences of the according terms w1, w2, w3, ...
+
+        return the temporary directory where the file is written into
     """
 
-    if not os.path.isdir(_TEMP_DIR):
-        os.makedirs(_TEMP_DIR)
+    temp_dir = _TEMP_DIR()
+    if not os.path.isdir(temp_dir):
+        os.makedirs(temp_dir)
     else: # Clean dir
-        shutil.rmtree(_TEMP_DIR)
-        os.makedirs(_TEMP_DIR)
+        shutil.rmtree(temp_dir)
+        os.makedirs(temp_dir)
 
-    with open(_DATA_FILE, 'w') as f:
+    with open(os.path.join(temp_dir, _DATA_FILE), 'w') as f:
         for converted_paper in converted_papers:
+            if not converted_paper:
+                continue
             f.write(converted_paper)
             f.write('\n')
 
-def _lda(data_file = _DATA_FILE):
-    cmd = './lda --test_data {0} --num_topics {1} --directory {2} --model_prefix ldafit'.format(data_file, _TOPIC_COUNT, _TEMP_DIR)
+    return temp_dir
+
+def _lda(temp_dir, data_file = _DATA_FILE):
+    # Get absolute paths
+    data_file = os.path.join(temp_dir, data_file)
+    output_matrix_file = os.path.join(temp_dir, _OUTPUT_MATRIX_FILE)
+
+    cmd = './lda --test_data {0} --num_topics {1} --directory {2} --model_prefix ldafit'.format(data_file, _TOPIC_COUNT, temp_dir)
     print '${0}'.format(cmd)
     environment = os.environ.copy()
     environment['LD_LIBRARY_PATH'] = _GSL_LIB_PATH
     subprocess.check_call(cmd, shell = True, cwd = os.path.dirname(_LDA_BINARY), env = environment)
 
     global lda_result
-    lda_result = np.loadtxt(_OUTPUT_MATRIX_FILE, dtype = int)
+    lda_result = np.loadtxt(output_matrix_file, dtype = int)
 
 def _grade(word_counters):
     """
@@ -111,16 +127,20 @@ def _grade(word_counters):
 
     return output.T
 
-def extract_lda(papers):
+def extract_lda(papers, clean_up = True):
     """
         Extract lda for a list of papers. This is a list of papers whose attributes "abstract" will be parsed for words.
         return a matrix whose rows are the paper with the same index, and columns are the topics. This matrix is normalized by row.
     """
+    assert len(papers) <= MAX_PROCESSING_LENGTH
     paper_abstracts = [_get_word_list(paper.abstract) for paper in papers]
 
     data = map(_word_count, paper_abstracts)
-    _to_data_file(map(_word_counter_to_matrix_text, data))
-    _lda()
+    temp_dir = _to_data_file(map(_word_counter_to_matrix_text, data))
+    _lda(temp_dir)
+
+    if clean_up:
+        shutil.rmtree(temp_dir)
 
     return _grade(data)
 

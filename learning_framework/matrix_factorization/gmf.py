@@ -1,3 +1,4 @@
+import logging
 import argparse
 import numpy as np
 #import numexpr as ne
@@ -45,8 +46,8 @@ def load_data(dir):
   nusers = int(np.max(d[:,0]))+1
   nitems = int(np.max(d[:,1]))+1
 
-  print '+ read data from', dir
-  print '+ nusers', nusers, 'nitems', nitems
+  logging.info('+ read data from %s', dir)
+  logging.info('+ nusers %s nitems %s', nusers, nitems)
   return nusers, nitems, train, valid, test, idx0_user, idx0_item
 
 def to_mat(d, nusers, nitems):
@@ -55,7 +56,7 @@ def to_mat(d, nusers, nitems):
   return mat_row, mat_col
 
 def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=2):#np.inf):
- 
+
   train_data_row, train_data_col = to_mat(train_data, nusers, nitems)
   valid_data_row, valid_data_col = to_mat(valid_data, nusers, nitems)
 
@@ -70,7 +71,7 @@ def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=2):#np.inf)
       #vprec, _, num_users = m.prec_err(valid_data_row, train_data_row, T=T)
       #vmar, num_users = m.mar_err(valid_data_row, train_data_row)
       vmrr, num_users = m.mrr_err(valid_data_row, train_data_row)
-      print '%d: train mse: %f, valid mse: %f, valid mrr (%d users): %f' % (iter, trerr, verr, num_users, vmrr)
+      logging.info('%d: train mse: %f, valid mse: %f, valid mrr (%d users): %f' % (iter, trerr, verr, num_users, vmrr))
     if iter % 10 == 0 and iter != 0:
       m.save(train_data_row, train_data_col)
 
@@ -88,25 +89,25 @@ def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=2):#np.inf)
 def run(m, train_data, valid_data, test_data, nusers, nitems, T, test_only=False, save_model = False):
 
   if not test_only:
-    print '+ optimize model'
+    logging.info('+ optimize model')
     try:
       optimize(m, train_data, valid_data, nusers, nitems, T)
     except KeyboardInterrupt:
-      print 'started shutdown procedures'
+      logging.info('started shutdown procedures')
       optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=1)
 
   obs_data_row, _ = to_mat(np.vstack([train_data, valid_data]), nusers, nitems)
   test_data_row, _ = to_mat(test_data, nusers, nitems)
 
-  terr = m.mse_err(test_data) 
+  terr = m.mse_err(test_data)
   #tprec, ntprec, num_users = m.prec_err(test_data_row, obs_data_row, T=T)
   tprec, ntprec, num_users = m.prec_err(test_data_row, obs_data_row, full=True, T=T, output_ranking=True)
-  #tmar, num_users = m.mar_err(test_data_row, obs_data_row, full=True) 
-  tmrr, num_users = m.mrr_err(test_data_row, obs_data_row, full=True) 
-  print 'test err: %f, test mrr (%d users): %f\n' % (terr, num_users, tmrr)
- 
+  #tmar, num_users = m.mar_err(test_data_row, obs_data_row, full=True)
+  tmrr, num_users = m.mrr_err(test_data_row, obs_data_row, full=True)
+  logging.info('test err: %f, test mrr (%d users): %f\n' % (terr, num_users, tmrr))
+
   if not test_only and save_model:
-    print 'saving model'
+    logging.info('saving model')
     train_data_row, train_data_col = to_mat(np.vstack([train_data, valid_data]), nusers, nitems)
     m.save(train_data_row, train_data_col)
 
@@ -142,7 +143,7 @@ def solve_reg_least_squares_oneuser(R, U, V, bVV, a_m_b, a):
   #self._U[u,:] = np.dot(np.linalg.inv(np.dot(np.dot(self._V.T, Cdiag), self._V) + np.eye(self._k)*self._u_vprior), \
   #               (np.dot(np.dot(self._V.T, Cdiag), R)))
 
-  A = bVV + a_m_b * np.dot(V[nnz_idx,:].T, V[nnz_idx,:]) 
+  A = bVV + a_m_b * np.dot(V[nnz_idx,:].T, V[nnz_idx,:])
   b = a * V[nnz_idx,:].sum(axis=0)
   U = np.linalg.solve(A,b.T)
 
@@ -165,7 +166,7 @@ def solve_reg_least_squares(d, U, V, a, b, lambda_, nneg=False):
     #self._U[u,:] = np.dot(np.linalg.inv(np.dot(np.dot(self._V.T, Cdiag), self._V) + np.eye(self._k)*self._u_vprior), \
     #               (np.dot(np.dot(self._V.T, Cdiag), R)))
 
-    A = bVV + a_m_b * np.dot(V[nnz_idx,:].T, V[nnz_idx,:]) 
+    A = bVV + a_m_b * np.dot(V[nnz_idx,:].T, V[nnz_idx,:])
     bvec = a * V[nnz_idx,:].sum(axis=0)
 
     if nneg:
@@ -178,9 +179,9 @@ def solve_reg_least_squares(d, U, V, a, b, lambda_, nneg=False):
 
 
 class Model:
- 
+
   def __init__(self, n, m, k=50, a=1, b=0.01, u_vprior=0.1, v_vprior=0.1, experiment_dir='.', nneg=False, idx0_user=False, idx0_item=False):
-   
+
     self._n = n
     self._m = m
     self._k = k
@@ -211,8 +212,8 @@ class Model:
       self._idx0_item = 1
 
     if self._nneg:
-      print '\t+ non-negative factors'
-    print '+ model created'
+      logging.info('\t+ non-negative factors')
+    logging.info('+ model created')
 
   def load(self, U, V):
     self._U = U
@@ -232,7 +233,7 @@ class Model:
     np.savetxt(os.path.join(self._experiment_dir,'U_gaprec.tsv'), np.hstack([nz_users[:,np.newaxis], nz_users[:,np.newaxis]+self._idx0_user, self._U[nz_users,:]]), '%.8f', delimiter='\t')
     nz_items = np.array(obs_mat_col.sum(axis=0).nonzero()[1]).flatten()
     np.savetxt(os.path.join(self._experiment_dir,'V_gaprec.tsv'), np.hstack([nz_items[:,np.newaxis], nz_items[:,np.newaxis]+self._idx0_item, self._V[nz_items,:]]), '%.8f', delimiter='\t')
-   
+
     if not self._nneg:
       minimum = min(np.min(self._U), np.min(self._V))
       if minimum > 0:
@@ -279,7 +280,7 @@ class Model:
         continue
 
       preds = self.predict_user(u)
-      preds = preds.T #!!! 
+      preds = preds.T #!!!
       preds[np.array(obs_mat[u,:].nonzero()[1]).flatten()] = -np.inf # remove train
 
       rr += (1. / (np.argsort(np.argsort(-preds))[test_idx] + 1)).sum()
@@ -313,7 +314,7 @@ class Model:
     mar = ar / (len(users) - user_wo_ratings)
 
     return mar, len(users)-user_wo_ratings
-   
+
 
   def prec_err(self, test_mat, obs_mat, full=False, T=100, output_ranking=False):
     precision = 0
@@ -341,7 +342,7 @@ class Model:
       #idx = set(preds.argsort()[-T:])
       idx = set(np.argpartition(-preds,T)[:T])
       #if idx_ != idx:
-      #  print len(idx), len(idx_)
+      #  logging.info(len(idx), len(idx_))
       #  set_trace()
       num_inter = len(idx.intersection(nnz_idx))
       normalized_precision += num_inter/float(min(T, nnz_idx.size))
@@ -355,8 +356,8 @@ class Model:
       f.close()
 
     return precision/(len(users)-user_wo_ratings), normalized_precision/(len(users)-user_wo_ratings), len(users)-user_wo_ratings
-     
-     
+
+
 
   def mse_err(self, data):
     preds = map(lambda i: self.predict_pair(data[i,0], data[i,1]), xrange(data.shape[0]))
@@ -398,12 +399,12 @@ if __name__ == '__main__':
 
   if not os.path.exists(eval_dir):
     os.mkdir(eval_dir)
-    print '+ creating eval dir:', eval_dir
+    logging.info('+ creating eval dir: %s', eval_dir)
   else:
-    print '+ using eval dir:', eval_dir
+    logging.info('+ using eval dir: %s', eval_dir)
 
   b = float(train.shape[0]) / (nusers * nitems)
-  print '+ b:', b
+  logging.info('+ b: %s', b)
 
   model = Model(nusers, nitems, b=b, k=args.k, u_vprior=args.lambda_u, v_vprior=args.lambda_v, experiment_dir=eval_dir,nneg=args.nneg,idx0_user=idx0_user, idx0_item=idx0_item)
   if args.load is None:
@@ -418,15 +419,15 @@ if __name__ == '__main__':
     # set_trace()
     if U.shape[1] != args.k:
       U = U[:,-args.k:]
-      print 'resizing U to', U.shape
+      logging.info('resizing U to %s', U.shape)
     if V.shape[1] != args.k:
       V = V[:,-args.k:]
-      print 'resizing V to', V.shape
+      logging.info('resizing V to %s', V.shape)
     model.load(U,V)
-    print '+ U&V loaded'
+    logging.info('+ U&V loaded')
     errs = run(model, train, valid, test, nusers, nitems, 100, test_only=True)
 
-  print "Finished running..."
+  logging.info("Finished running...")
 
   if not os.path.exists('results.txt'):
     with open('results.txt', 'w') as f:

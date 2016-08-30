@@ -1,4 +1,5 @@
 
+import logging
 import traceback
 import json
 import time
@@ -29,7 +30,7 @@ class LearningManager(BaseHTTPServer.BaseHTTPRequestHandler):
         """Respond to a POST request."""
         data_string = self.rfile.read(int(self.headers['Content-Length']))
         json_payload = json.loads(data_string)
-        
+
         try:
             result = processor.process(json_payload)
             status_code = 200
@@ -43,14 +44,21 @@ class LearningManager(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(result))
 
 if __name__ == '__main__':
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%d/%m/%Y %H:%M:%S',
+                        filename='/home/ml/arxivapp/site/arxivapp/learning_framework/manager.log',
+                        filemode='a',
+                        level=logging.DEBUG)
+    logging.info('Initializing manager.')
+
     processor.initialize()
 
     server_class = BaseHTTPServer.HTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), LearningManager)
-    print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
+    logging.info("Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print "Caught interrupt signal. Terminating..."
+        logging.info("Caught interrupt signal. Terminating...")
     httpd.server_close()
-    print time.asctime(), "Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER)
+    logging.info("Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER))

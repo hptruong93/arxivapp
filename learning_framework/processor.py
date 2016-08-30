@@ -1,3 +1,4 @@
+import logging
 import traceback
 import sys
 
@@ -40,7 +41,7 @@ def initialize():
     matrix_factorization_object = matrix_factorization.MatrixFactorization()
 
 def process(request):
-    print 'Serving request {0}'.format(request)
+    logging.info('Serving request {0}'.format(request))
     if 'action' not in request:
         return _return_failure('Has to specify an action')
     action = request['action']
@@ -53,14 +54,14 @@ def process(request):
 
     args = [] if 'args' not in request else request['args']
     kwargs = {} if 'kwargs' not in request else request['kwargs']
-    
+
 
     if not hasattr(learning_module, action):
         return _return_failure('Action not found {0}'.format(action))
 
     try:
         calling = getattr(learning_module, action)
-        
+
         result, message = calling(*args, **kwargs)
         if not result:
             return _return_failure('Action execution failed.\n' + str(message))
@@ -68,6 +69,6 @@ def process(request):
             return _return_success(message)
     except:
         trace = traceback.format_exc()
-        print trace
+        logging.warning(trace)
         return _return_failure(trace)
 

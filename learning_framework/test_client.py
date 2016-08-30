@@ -28,7 +28,7 @@ def split_data():
 def train():
     data = {
             'action' : 'train',
-            'args' : [config.CATEGORY_COUNT + 0 * config.LDA_TOPIC_COUNT, 1, 1],
+            'args' : [config.CATEGORY_COUNT + config.LDA_TOPIC_COUNT, 1, 1],
             'kwargs' : {'input_load_data' : '/home/ml/arxivapp/site/arxivapp/test_data'}
         }
     do_request(data)
