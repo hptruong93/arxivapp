@@ -49,26 +49,47 @@ def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_
         else:
             split = [extracted_params['category']]
 
-        #Only allow one category
-        split = [split[0]] if len(split) > 0 else split
+        # Enable if only allow one category
+        # split = split[0:1] if len(split) > 0 else split
 
-        if filter_type == 'cross_list':
-            if len(split) > 0:
-                primary_category = split[0]
-                for category in split:
-                    appending = db_models.Q(**{'%scategories__code__icontains' % prepend_name : category})
-                    filter_args.append(appending)
-                filter_args.append(~db_models.Q(**{'%sprimary_category__code__icontains' % prepend_name : primary_category}))
-        elif filter_type == 'main':
-            if len(split) != 0:
-                #Search for main category
-                filter_kwargs['%sprimary_category__code__icontains' % prepend_name] = split[0]
-        else:
-            if len(split) > 0:
-                primary_category = split[0]
-                for category in split:
-                    appending = db_models.Q(**{'%scategories__code__icontains' % prepend_name : category})
-                    filter_args.append(appending)
+        _primary_code = '%sprimary_category__code__icontains' % prepend_name
+        _category_code = '%scategories__code__icontains' % prepend_name
+        _or_function = lambda x, y : x | y
+
+        if filter_type == 'cross_list' and len(split) > 0:
+            # primary_category = split[0]
+            # for category in split:
+            #     appending = db_models.Q(**{_category_code : category})
+            #     filter_args.append(appending)
+
+            # filter_args.append(~db_models.Q(**{_primary_code : primary_category}))
+
+            # We filter for papers which do NOT have primary categories in the list, but have categories in the list
+
+            # 1st: have category in the list
+            conditions = [db_models.Q(**{_category_code : category}) for category in split]
+            final_condition = reduce(_or_function, conditions)
+            filter_args.append(final_condition)
+
+            # 2nd: not have primary category in the list
+            conditions = [db_models.Q(**{_primary_code : category}) for category in split]
+            final_condition = reduce(_or_function, conditions)
+            filter_args.append(~final_condition) # Not any of the primary category
+
+        elif filter_type == 'main' and len(split) > 0:
+            # Search for main category(ies)
+            conditions = [db_models.Q(**{_primary_code : category}) for category in split]
+
+            # Now or all conditions
+            final_condition = reduce(_or_function, conditions)
+            filter_args.append(final_condition)
+
+        elif len(split) > 0:
+            # Search for category(ies)
+            conditions = [db_models.Q(**{_category_code : category}) for category in split]
+            # Now or all conditions
+            final_condition = reduce(_or_function, conditions)
+            filter_args.append(final_condition)
 
     if extracted_params['from_date']:
         filter_kwargs['%screated_date__gte' % prepend_name] = extracted_params['from_date']
@@ -113,7 +134,7 @@ def filter_paper_default(request, filter_args, filter_kwargs, order_by_fields, f
             default_filter_dict['from_date'] = utils_date.date_to_string(default_filter_dict['from_date'])
 
         if default_filter_dict.get('to_date'):
-            default_filter_dict['to_date'] = utils_date.date_to_string(default_filter_dict['to_date'])            
+            default_filter_dict['to_date'] = utils_date.date_to_string(default_filter_dict['to_date'])
 
         returning = _generic_filter_paper(request.user, default_filter_dict, filter_args, filter_kwargs, order_by_fields, '', filter_type)
         return returning

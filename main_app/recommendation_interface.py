@@ -121,7 +121,7 @@ def index(user):
         return query_output
     except:
         return models.Paper.objects.filter(arxiv_id__in = ())
-    
+
 
 def author(user, author_id, *args, **kwargs):
     """
