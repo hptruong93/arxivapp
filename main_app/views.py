@@ -95,7 +95,7 @@ def browse(request):
     """
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
     order_by_fields = ['-created_date']
-    articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)[:500]
+    articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)[:config.MAX_ARTICLE_SORTING]
 
     # Also sort papers
     sort_strategy, articles = recommendation_interface.sort(request.user, articles)
@@ -105,7 +105,9 @@ def browse(request):
                                         additional_data = view_renderer.AdditionalData(
                                                                         None,
                                                                         filter_data,
-                                                                        section_message = 'Browse'))
+                                                                        section_message = 'Browse',
+                                                                        info_message = 'Limited to maximum {0} papers.\n'.format(config.MAX_ARTICLE_SORTING) +
+                                                                        'Sorting algorithm: {0}'.format(sort_strategy)))
 
 @auth_decorators.login_required
 def index(request):
@@ -164,7 +166,8 @@ def index(request):
     return view_renderer.render_papers(request, articles_data, cross_list_data, replacement_data, recommended_articles_data,
                                         additional_data = view_renderer.AdditionalData( None,
                                                                                         filter_data,
-                                                                                        displayed_filters = view_renderer.FilterDisplayed(date = False)))
+                                                                                        displayed_filters = view_renderer.FilterDisplayed(date = False),
+                                                                                        info_message = 'Sorting algorithm: {0}'.format(sort_strategy)))
 
 @auth_decorators.login_required
 def author(request, author_id):
@@ -174,7 +177,9 @@ def author(request, author_id):
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
     articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_args, filter_dict, order_by_fields)
     return view_renderer.render_papers(request, view_renderer.TabData(articles, None, False),
-                                        additional_data = view_renderer.AdditionalData('All articles by %s' % author, filter_data, section_message = 'Author'))
+                                        additional_data = view_renderer.AdditionalData('All articles by %s' % author,
+                                                                                        filter_data,
+                                                                                        section_message = 'Author'))
 
 @auth_decorators.login_required
 def category(request, category_code):
@@ -240,7 +245,7 @@ def history(request):
     paper_history = view_renderer.query_filter(main_app_models.PaperHistory.objects.filter(user = current_user), filter_args, filter_dict, order_by_fields)
     articles = list(set(paper_item.paper for paper_item in paper_history))
 
-    articles, paginated_articles, _ = view_renderer.prepare_view_articles(current_user, articles, request.GET.get('page'), log_paper_surf = False)
+    articles, paginated_articles, _ = view_renderer.prepare_view_articles(current_user, articles, view_renderer.get_page_number(request), log_paper_surf = False)
 
     author_history = main_app_models.AuthorHistory.objects.filter(user = current_user)
     author_history = author_history.values('author__id', 'author__last_name', 'author__first_name')
@@ -269,7 +274,7 @@ def search(request):
 
         filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
         articles_query = view_renderer.query_filter(main_app_models.Paper.objects.filter(title__icontains = search_value), filter_args, filter_dict, order_by_fields)
-        articles, paginated_articles, _ = view_renderer.prepare_view_articles(current_user, articles_query, request.GET.get('page'), log_paper_surf = False)
+        articles, paginated_articles, _ = view_renderer.prepare_view_articles(current_user, articles_query, view_renderer.get_page_number(request), log_paper_surf = False)
 
         authors = main_app_models.Author.objects.filter(full_name__icontains = search_value)
         categories = main_app_models.Category.objects.filter(db_models.Q(code__icontains = search_value) | db_models.Q(name__icontains = search_value))

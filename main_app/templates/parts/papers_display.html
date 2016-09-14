@@ -9,7 +9,7 @@
         <h4> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a> </h4>
         {% endif %}
         <div>
-        By: 
+        By:
         {% for author in article.all_authors %}
             <a href="{% url 'author' author.id %}">{{ author }}</a>,
         {% endfor %}
@@ -18,7 +18,7 @@
             On: {{ article.last_resigered_date|date:"DATETIME_FORMAT" }}
         </div>
         <div>
-            In: 
+            In:
             {% for category in article.all_categories %}
                 <a href="{% url 'category' category.code %}">{{ category }}</a>,
             {% endfor %}
@@ -28,7 +28,7 @@
             <div class="show-more"> <a href="#">Full Abstract</a> </div>
             <div class="text-content short-text"> {{ article.abstract }} </div>
         </div>
-    </div> 
+    </div>
     {% endfor %}
 </div>
 <hr>
@@ -37,7 +37,7 @@
 <div class="pagination">
     <span class="step-links">
         {% if paginated_articles.has_previous %}
-            <a href="?page={{ paginated_articles.previous_page_number }}">Previous</a>
+            <a id="previous_page_link" href="?page={{ paginated_articles.previous_page_number }}">Previous</a>
         {% endif %}
 
         <span class="current">
@@ -45,7 +45,7 @@
         </span>
 
         {% if paginated_articles.has_next %}
-            <a href="?page={{ paginated_articles.next_page_number }}">Next</a>
+            <a id="next_page_link" href="?page={{ paginated_articles.next_page_number }}">Next</a>
         {% endif %}
     </span>
 </div>

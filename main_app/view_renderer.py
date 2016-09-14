@@ -38,12 +38,13 @@ class AdditionalData(object):
     """
         Containing any additional information used for rendering (e.g. show/hide certain elements), title, and other customizations)
     """
-    def __init__(self, header_message = None, filters_sorts = None, displayed_filters = FilterDisplayed(), section_message = None):
+    def __init__(self, header_message = None, filters_sorts = None, displayed_filters = FilterDisplayed(), section_message = None, info_message = None):
         super(AdditionalData, self).__init__()
         self.header_message = header_message
         self.filters_sorts = filters_sorts
         self.displayed_filters = displayed_filters
         self.section_message = section_message
+        self.info_message = info_message
 
     def to_dict(self):
         output = {}
@@ -58,8 +59,24 @@ class AdditionalData(object):
         if self.section_message:
             output['section_message'] = self.section_message
 
+        if self.info_message:
+            output['info_message'] = self.info_message
+
         return output
 
+########################################################################################################################################
+########################################################################################################################################
+########################################################################################################################################
+
+def get_page_number(request):
+    """
+        Retrieve the page number from the request.
+        This prioritizes page number from the POST filtering parameter over the GET request parameter.
+    """
+    page_number = request.GET.get('page')
+    if not page_number:
+        page_number = request.POST.get('filter_page')
+    return page_number
 
 def general_filter_check(request, default_filter = False, filter_type = 'main'):
     filter_args = []
@@ -137,11 +154,13 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         Render the page with the main tab and optional cross list, replacement and recommendation tabs.
         Construct the appropriate data object to pass on to template for html rendering.
     """
+    page_number = get_page_number(request)
+
     do_log = articles_data.log_paper_surf
     articles = articles_data.articles
     sort_strategy = articles_data.sort_strategy
 
-    articles, paginated_articles, surf_group = prepare_view_articles(request.user, articles, request.GET.get('page'), tab_name = 'latest', sort_strategy = sort_strategy, log_paper_surf = do_log)
+    articles, paginated_articles, surf_group = prepare_view_articles(request.user, articles, page_number, tab_name = 'latest', sort_strategy = sort_strategy, log_paper_surf = do_log)
     data = {
         'request' : request,
         'user_last_login' : utils_date.date_to_string(request.user.last_login),
@@ -155,7 +174,7 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         cross_list = cross_list_data.articles
         sort_strategy = cross_list_data.sort_strategy
 
-        cross_list_articles, paginated_cross_list_articles, surf_group = prepare_view_articles(request.user, cross_list, request.GET.get('page'), tab_name = 'cross_list', sort_strategy = sort_strategy, log_paper_surf= do_log)
+        cross_list_articles, paginated_cross_list_articles, surf_group = prepare_view_articles(request.user, cross_list, page_number, tab_name = 'cross_list', sort_strategy = sort_strategy, log_paper_surf= do_log)
         data['cross_list_articles'] = cross_list_articles
         data['paginated_cross_list_articles'] = paginated_cross_list_articles
         data['cross_list_surf_group'] = surf_group.id
@@ -165,7 +184,7 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         replacement = replacement_data.articles
         sort_strategy = replacement_data.sort_strategy
 
-        replacement_articles, paginated_replacement_articles, surf_group = prepare_view_articles(request.user, replacement, request.GET.get('page'), tab_name = 'replacement', sort_strategy = sort_strategy, log_paper_surf = do_log)
+        replacement_articles, paginated_replacement_articles, surf_group = prepare_view_articles(request.user, replacement, page_number, tab_name = 'replacement', sort_strategy = sort_strategy, log_paper_surf = do_log)
         data['replacement_articles'] = replacement_articles
         data['paginated_replacement_articles'] = paginated_replacement_articles
         data['replacement_surf_group'] = surf_group.id
@@ -174,7 +193,7 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         do_log = recommended_articles_data.log_paper_surf
         recommended_articles = recommended_articles_data.articles
 
-        recommended_articles, paginated_recommended_articles, _ = prepare_view_articles(request.user, recommended_articles, request.GET.get('page'), tab_name = 'recommended', log_paper_surf = do_log)
+        recommended_articles, paginated_recommended_articles, _ = prepare_view_articles(request.user, recommended_articles, page_number, tab_name = 'recommended', log_paper_surf = do_log)
         data['recommended_articles'] = recommended_articles
         data['paginated_recommended_articles'] = paginated_recommended_articles
 

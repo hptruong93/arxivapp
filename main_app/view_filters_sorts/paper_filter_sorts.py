@@ -20,6 +20,8 @@ def _extract_params(post_request):
     output['to_date'] = utils_date.string_to_date(output['to_date'])
 
     output['make_default'] = param_extraction(post_request.get('make_default'))
+    output['page'] = param_extraction(post_request.get('page'))
+    output['page'] = int(output['page']) if output['page'] is not None else 1
 
     return output
 
@@ -99,7 +101,7 @@ def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_
             order_by_fields.append(SORT_FIELDS[sorting_field])
 
     if extracted_params['make_default']:
-        filter_params = {k:v for k, v in extracted_params.iteritems() if k != 'make_default'}
+        filter_params = { k : v for k, v in extracted_params.iteritems() if k != 'make_default' and k != 'page' }
         filter_params['user'] = user
 
         new_filter, created = main_app_models.UserFilterSort.objects.get_or_create(**filter_params)

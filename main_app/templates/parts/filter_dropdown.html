@@ -24,6 +24,8 @@
                 <input type="text" class="form-control" name="filter_author_full_name" value="{{ filters_sorts.author_full_name }}">
             </div> -->
 
+            <input type="text" class="form-control"  id="filter_page" name="filter_page" value="{{ filters_sorts.page }}" style="display: none;">
+
             {% if displayed_filters.category %}
             <div class="form-group col-sm-12">
                 <label for="category">Category(ies):</label>
@@ -67,7 +69,7 @@
             </div>
 
             <div class="form-group col-sm-12">
-                <button type="submit" class="btn btn-default"> Filters </button>
+                <button id="submit_filter" type="submit" class="btn btn-default"> Filters </button>
             </div>
         </form>
     </div>

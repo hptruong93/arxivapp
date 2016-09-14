@@ -47,6 +47,10 @@
             <h3 style="text-align: center"> {{ header_message }} </h3>
             {% endif %}
 
+            {% if info_message %}
+            <h5 style="text-align: center"> {{ info_message }} </h5>
+            {% endif %}
+
             {% if displayed_filters %}
             {% include "parts/filter_dropdown.html" %}
             {% endif %}
