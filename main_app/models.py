@@ -6,7 +6,7 @@ import abstract_models
 
 class UserFilterSort(models.Model):
     user = models.ForeignKey(auth_models.User)
-    
+
     title = models.CharField(max_length = 200, null = True)
 
     author_full_name = models.CharField(max_length = 50, null = True)
@@ -23,7 +23,7 @@ class UserFilterSort(models.Model):
     def save(self, *args, **kwargs):
         if self.is_default:
             try:
-                default_filter = UserFilterSort.objects.get(is_default = True)
+                default_filter = UserFilterSort.objects.get(user = self.user, is_default = True)
                 if self != default_filter:
                     default_filter.is_default = False
                     default_filter.save()
@@ -33,9 +33,9 @@ class UserFilterSort(models.Model):
 
 
 class Author(models.Model):
-    first_name = models.CharField(max_length=250)
-    middle_name = models.CharField(max_length=50, null = True)
-    last_name = models.CharField(max_length=50)
+    first_name = models.CharField(max_length = 250)
+    middle_name = models.CharField(max_length = 50, null = True)
+    last_name = models.CharField(max_length = 50)
 
     full_name = models.CharField(max_length = 300)
 
@@ -47,35 +47,35 @@ class Author(models.Model):
         return self.full_name
 
 class Category(models.Model):
-    code = models.CharField(max_length=20, primary_key = True)
-    name = models.CharField(max_length=100, null = True)
+    code = models.CharField(max_length = 20, primary_key = True)
+    name = models.CharField(max_length = 100, null = True)
 
     def __unicode__(self):
         return self.code
 
 class Paper(models.Model):
-    arxiv_id = models.CharField(max_length=30, primary_key = True)
+    arxiv_id = models.CharField(max_length = 30, primary_key = True)
     created_date = models.DateTimeField(null = True)
     updated_date = models.DateTimeField(null = True)
 
     #Last time the paper appears to the system
     #This is not to be confused with updated date. This date represents the date
-    #on which the paper appears in an update from arxiv website, not the date the paper was submitted to arxiv 
+    #on which the paper appears in an update from arxiv website, not the date the paper was submitted to arxiv
     last_resigered_date = models.DateTimeField(null = True)
-    
+
     #The primary category would be the first category as pulled from arxiv
     primary_category = models.ForeignKey(Category, null = True, related_name = 'paper_primary_categories')
     #All categories of the paper, INCLUDING the primary category
     categories = models.ManyToManyField(Category, related_name = 'paper_categories')
     journal_ref = models.CharField(max_length = 1000, null = True)
-    
-    title = models.CharField(max_length=400)
+
+    title = models.CharField(max_length = 400)
     authors = models.ManyToManyField(Author)
     #Commma separated list of author ids (in order that they appear in the daily uodate)
     ordered_authors = models.TextField(null=False, default = "")
 
-    abstract = models.CharField(max_length=10000)
-    link_full_text_pdf = models.CharField(max_length=700, null = True)
+    abstract = models.CharField(max_length = 10000)
+    link_full_text_pdf = models.CharField(max_length = 700, null = True)
 
     def __unicode__(self):
         return self.title
@@ -118,7 +118,7 @@ class AuthorFocusHistory(abstract_models.AbstractUserHistory):
         Logged when user sees a specific author by clicking on the link at author's name
     """
     author = models.ForeignKey(Author)
-    
+
 class AuthorHistory(abstract_models.AbstractUserHistory):
     """
         When user visits a paper, all authors in that paper will be logged

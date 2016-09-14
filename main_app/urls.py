@@ -9,6 +9,8 @@ urlpatterns = patterns('',
     url(r'^login/(.*)$', views.login, name='login_link'),
     url(r'^logout$', views.logout, name='logout'),
     url(r'^signup$', views.signup, name='signup'),
+
+    url(r'^browse$', views.browse, name='browse'),
     url(r'^history$', views.history, name='history'),
     url(r'^author/([0-9]+)$', views.author, name='author'),
     url(r'^category/(.*?)$', views.category, name='category'),

@@ -7,6 +7,7 @@ from main_app import models as main_app_models
 from main_app.history_tracking import history_tracking
 from main_app.view_filters_sorts import paper_filter_sorts
 from main_app import central_config as config
+from main_app.utils import utils_date
 from main_app.utils import utils_general
 
 from main_app import recommendation_interface
@@ -18,15 +19,31 @@ class TabData(object):
         self.sort_strategy = sort_strategy
         self.log_paper_surf = log_paper_surf
 
+class FilterDisplayed(object):
+    """
+        Containing any information about which filter to display. Default constructor displays all filters.
+    """
+    def __init__(self, category = True, date = True):
+        super(FilterDisplayed, self).__init__()
+        self.category = category
+        self.date = date
+
+    def to_dict(self):
+        return {
+            'category' : self.category,
+            'date' : self.date
+        }
+
 class AdditionalData(object):
     """
         Containing any additional information used for rendering (e.g. show/hide certain elements), title, and other customizations)
     """
-    def __init__(self, header_message = None, filters_sorts = None, display_filter = True):
+    def __init__(self, header_message = None, filters_sorts = None, displayed_filters = FilterDisplayed(), section_message = None):
         super(AdditionalData, self).__init__()
         self.header_message = header_message
         self.filters_sorts = filters_sorts
-        self.display_filter = display_filter
+        self.displayed_filters = displayed_filters
+        self.section_message = section_message
 
     def to_dict(self):
         output = {}
@@ -36,7 +53,11 @@ class AdditionalData(object):
         if self.filters_sorts:
             output['filters_sorts'] = self.filters_sorts
 
-        output['display_filter'] = self.display_filter
+        output['displayed_filters'] = self.displayed_filters.to_dict()
+
+        if self.section_message:
+            output['section_message'] = self.section_message
+
         return output
 
 
@@ -112,6 +133,10 @@ def prepare_view_articles(current_user, articles, page_number, log_paper_surf = 
     return utils_general._n_group(sorted_articles, config.MAX_COLUMN_DISPLAYED), sorted_articles, surf_group
 
 def render_papers(request, articles_data, cross_list_data = None, replacement_data = None, recommended_articles_data = None, additional_data = None):
+    """
+        Render the page with the main tab and optional cross list, replacement and recommendation tabs.
+        Construct the appropriate data object to pass on to template for html rendering.
+    """
     do_log = articles_data.log_paper_surf
     articles = articles_data.articles
     sort_strategy = articles_data.sort_strategy
@@ -119,6 +144,7 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
     articles, paginated_articles, surf_group = prepare_view_articles(request.user, articles, request.GET.get('page'), tab_name = 'latest', sort_strategy = sort_strategy, log_paper_surf = do_log)
     data = {
         'request' : request,
+        'user_last_login' : utils_date.date_to_string(request.user.last_login),
         'articles' : articles,
         'paginated_articles' : paginated_articles,
         'latest_surf_group': surf_group.id if surf_group else ""

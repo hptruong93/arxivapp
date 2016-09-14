@@ -88,61 +88,83 @@ def logout(request):
 ###############################################################################################################################
 ###############################################################################################################################
 
-# @auth_decorators.login_required
-# def original_index(request):
-#     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True)
-#     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-#     recommended_articles = recommendation_interface.index(request.user)
+@auth_decorators.login_required
+def browse(request):
+    """
+        Browse all papers with filtering parameters.
+    """
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
+    order_by_fields = ['-created_date']
+    articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)[:500]
 
-#     return view_renderer.render_papers(request, articles, recommended_articles, additional_data = {'filters_sorts' : filter_data})
+    # Also sort papers
+    sort_strategy, articles = recommendation_interface.sort(request.user, articles)
+    articles_data = view_renderer.TabData(articles, sort_strategy, False)
+    return view_renderer.render_papers( request,
+                                        articles_data, None, None, None,
+                                        additional_data = view_renderer.AdditionalData(
+                                                                        None,
+                                                                        filter_data,
+                                                                        section_message = 'Browse'))
 
 @auth_decorators.login_required
 def index(request):
+    """
+        Only show papers from today, in the following tabs:
+        1) Latest
+        2) Cross list
+        3) Replacement
+        4) (Currently disabled) Recommended
+
+        Only allow filtering by category
+    """
     today = utils_date.get_today()
 
-    #Retrieve papers for latest tab
+    # Retrieve papers for latest tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'main')
-    #Only looking for papers from yesterday
+    # Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today })
     filter_dict.update({ 'updated_date__isnull': True })
-    order_by_fields = ['arxiv_id']
+    order_by_fields = ['-arxiv_id']
     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
 
-    #Also sort papers in this tab
+    # Also sort papers in this tab
     sort_strategy, articles = recommendation_interface.sort(request.user, articles)
     articles_data = view_renderer.TabData(articles, sort_strategy)
 
-    #Retrieve papers for cross_list tab
+    # Retrieve papers for cross_list tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'cross_list')
-    #Only looking for papers from yesterday
+    # Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today })
-    # filter_dict.update({ 'created_date__gte': today })
+    #  filter_dict.update({ 'created_date__gte': today })
     filter_dict.update({ 'updated_date__isnull': True })
-    order_by_fields = ['arxiv_id']
+    order_by_fields = ['-arxiv_id']
     cross_list = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
-    print cross_list.query
 
-    #Also sort papers in this tab
+    # Also sort papers in this tab
     sort_strategy, cross_list = recommendation_interface.sort(request.user, cross_list)
     cross_list_data = view_renderer.TabData(cross_list, sort_strategy)
 
-    #Retrieve papers for replacement tab
-    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = '')
-    #Only looking for papers from yesterday
+    # Retrieve papers for replacement tab
+    filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'replacement')
+    # Only looking for papers from yesterday
     filter_dict.update({ 'last_resigered_date__gte': today })
     filter_dict.update({ 'updated_date__isnull': False })
     replacement = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
 
-    #Also sort papers in this tab
+    # Also sort papers in this tab
     sort_strategy, replacement = recommendation_interface.sort(request.user, replacement)
     replacement_data = view_renderer.TabData(replacement, sort_strategy)
 
-    #Retrieve papers for recommended tab
+    # Retrieve papers for recommended tab
     # recommended_articles = recommendation_interface.index(request.user)
     # recommended_articles_data = view_renderer.TabData(recommended_articles, None, False)
     recommended_articles_data = None #Disabled for now
 
-    return view_renderer.render_papers(request, articles_data, cross_list_data, replacement_data, recommended_articles_data, additional_data = view_renderer.AdditionalData(None, filter_data))
+    return view_renderer.render_papers(request, articles_data, cross_list_data, replacement_data, recommended_articles_data,
+                                        additional_data = view_renderer.AdditionalData( None,
+                                                                                        filter_data,
+                                                                                        displayed_filters = view_renderer.FilterDisplayed(date = False)))
 
 @auth_decorators.login_required
 def author(request, author_id):
@@ -152,7 +174,7 @@ def author(request, author_id):
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
     articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_args, filter_dict, order_by_fields)
     return view_renderer.render_papers(request, view_renderer.TabData(articles, None, False),
-                                        additional_data = view_renderer.AdditionalData('All articles by %s' % author, filter_data, False))
+                                        additional_data = view_renderer.AdditionalData('All articles by %s' % author, filter_data, section_message = 'Author'))
 
 @auth_decorators.login_required
 def category(request, category_code):
@@ -162,7 +184,10 @@ def category(request, category_code):
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
     articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_args, filter_dict, order_by_fields)
     return view_renderer.render_papers(request, view_renderer.TabData(articles, None, False),
-                                        additional_data = view_renderer.AdditionalData('All articles in %s' % category, filter_data, False))
+                                        additional_data = view_renderer.AdditionalData('All articles in %s' % category,
+                                                                                        filter_data,
+                                                                                        displayed_filters = view_renderer.FilterDisplayed(category = False),
+                                                                                        section_message = 'Category'))
 
 @auth_decorators.login_required
 def paper(request, paper_id):

@@ -28,7 +28,11 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="intro-text">
+                        {% if section_message %}
+                        <span class="name">{{ section_message }}</span>
+                        {% else %}
                         <span class="name">Home</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -43,7 +47,7 @@
             <h3 style="text-align: center"> {{ header_message }} </h3>
             {% endif %}
 
-            {% if display_filter %}
+            {% if displayed_filters %}
             {% include "parts/filter_dropdown.html" %}
             {% endif %}
 

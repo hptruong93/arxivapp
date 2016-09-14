@@ -4,6 +4,8 @@ from main_app import models as main_app_models
 from main_app.utils import utils_general
 from main_app.utils import utils_date
 
+_FILTER_PREFIX = "filter_"
+
 param_extraction = utils_general.strip_string_or_none
 EXTRACTING_FORM_FIELDS = ['filter_title', 'filter_author_full_name', 'filter_category', 'filter_from_date', 'filter_to_date']
 EXTRACTING_FILTER_FIELDS = ['title', 'author_full_name', 'category', 'from_date', 'to_date', 'sort_by_1', 'sort_by_2']
@@ -21,7 +23,7 @@ def _extract_params(post_request):
 
     return output
 
-def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_by_fields, prepend_name, filter_type = 'main'):
+def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_by_fields, prepend_name, filter_type = None):
     SORT_FIELDS = {
         'sort_by_date' : '-%screated_date' % prepend_name,
         'sort_by_title' : '%stitle' % prepend_name
@@ -57,15 +59,7 @@ def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_
         _or_function = lambda x, y : x | y
 
         if filter_type == 'cross_list' and len(split) > 0:
-            # primary_category = split[0]
-            # for category in split:
-            #     appending = db_models.Q(**{_category_code : category})
-            #     filter_args.append(appending)
-
-            # filter_args.append(~db_models.Q(**{_primary_code : primary_category}))
-
             # We filter for papers which do NOT have primary categories in the list, but have categories in the list
-
             # 1st: have category in the list
             conditions = [db_models.Q(**{_category_code : category}) for category in split]
             final_condition = reduce(_or_function, conditions)
@@ -84,7 +78,7 @@ def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_
             final_condition = reduce(_or_function, conditions)
             filter_args.append(final_condition)
 
-        elif len(split) > 0:
+        elif len(split) > 0: # This also includes type recommendation
             # Search for category(ies)
             conditions = [db_models.Q(**{_category_code : category}) for category in split]
             # Now or all conditions
@@ -115,14 +109,16 @@ def _generic_filter_paper(user, post_request, filter_args, filter_kwargs, order_
         new_filter.is_default = True
         new_filter.save()
 
+    extracted_params['from_date'] = utils_date.date_to_string(extracted_params['from_date'])
+    extracted_params['to_date'] = utils_date.date_to_string(extracted_params['to_date'])
     return {k: v for k, v in extracted_params.iteritems() if v}
 
 def filter_paper_history(request, filter_args, filter_kwargs, order_by_fields):
-    post_dictionary = { (k[len('filter_'):] if k.startswith('filter_') else k) : v for k, v in request.POST.iteritems() }
+    post_dictionary = { (k[len(_FILTER_PREFIX):] if k.startswith(_FILTER_PREFIX) else k) : v for k, v in request.POST.iteritems() }
     return _generic_filter_paper(request.user, post_dictionary, filter_args, filter_kwargs, order_by_fields, 'paper__')
 
 def filter_paper(request, filter_args, filter_kwargs, order_by_fields, filter_type):
-    post_dictionary = { (k[len('filter_'):] if k.startswith('filter_') else k) : v for k, v in request.POST.iteritems() }
+    post_dictionary = { (k[len(_FILTER_PREFIX):] if k.startswith(_FILTER_PREFIX) else k) : v for k, v in request.POST.iteritems() }
     return _generic_filter_paper(request.user, post_dictionary, filter_args, filter_kwargs, order_by_fields, '', filter_type)
 
 def filter_paper_default(request, filter_args, filter_kwargs, order_by_fields, filter_type):
