@@ -23,9 +23,17 @@ MAX_PROCESSING_LENGTH = sys.maxint
 
 vocabulary_list = None
 vocabulary_dict = None
-lda_result = None
+
+def _create_divisor(x):
+    """
+        Return 1 if input is zero, else return the input.
+    """
+    return x if x != 0 else 1
 
 def _get_word_list(text):
+    """
+        Return a list of words in this string.
+    """
     return re.findall('\w+', text)
 
 def load_vocabulary():
@@ -106,10 +114,9 @@ def _lda(temp_dir, data_file = _DATA_FILE):
     environment['LD_LIBRARY_PATH'] = _GSL_LIB_PATH
     subprocess.check_call(cmd, shell = True, cwd = os.path.dirname(_LDA_BINARY), env = environment)
 
-    global lda_result
-    lda_result = np.loadtxt(output_matrix_file, dtype = int)
+    return np.loadtxt(output_matrix_file, dtype = int)
 
-def _grade(word_counters):
+def _grade(lda_result, word_counters):
     """
         Grade for each topic is the sum of product of word count and the weight of that word in the loaded lda result.
         Grade is also normalized by paper (by considering all topics for that paper).
@@ -123,7 +130,8 @@ def _grade(word_counters):
     # Now perform normalization.
     # Note that here we utilize the default behavior of sum in numpy does summing by column, which is summing by paper as we want.
     # In addition, divide also perform operations row by row, which is also what we want.
-    output = np.true_divide(output, sum(output)) # Dividing each column by its sum to normalize
+    divisor_creator = np.vectorize(_create_divisor) # This is to avoid dividing by zero
+    output = np.true_divide(output, divisor_creator(sum(output))) # Dividing each column by its sum to normalize
 
     return output.T
 
@@ -137,16 +145,16 @@ def extract_lda(papers, clean_up = True):
 
     data = map(_word_count, paper_abstracts)
     temp_dir = _to_data_file(map(_word_counter_to_matrix_text, data))
-    _lda(temp_dir)
+    lda_result = _lda(temp_dir)
 
     if clean_up:
         shutil.rmtree(temp_dir)
 
-    return _grade(data)
+    return _grade(lda_result, data)
 
 
 if __name__ == "__main__":
-    #Sample usage
+    # Sample usage
     load_vocabulary()
 
     class Test: # Dummy class
