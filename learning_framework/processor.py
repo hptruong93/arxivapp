@@ -46,7 +46,6 @@ def process(request):
         return _return_failure('Has to specify an action')
     action = request['action']
 
-
     if action == 'get_learning_module':
         return _return_success(_get_learning_module_name())
 
@@ -59,6 +58,11 @@ def process(request):
     if not hasattr(learning_module, action):
         return _return_failure('Action not found {0}'.format(action))
 
+
+    if learning_module.is_locked():
+        return _return_failure('Learning model is locked.')
+
+    learning_module.lock()
     try:
         calling = getattr(learning_module, action)
 
@@ -71,4 +75,6 @@ def process(request):
         trace = traceback.format_exc()
         logging.warning(trace)
         return _return_failure(trace)
+    finally:
+        learning_module.unlock()
 

@@ -3,6 +3,7 @@ import logging
 import traceback
 import json
 import time
+from SocketServer import ThreadingMixIn
 import BaseHTTPServer
 
 import config
@@ -43,6 +44,10 @@ class LearningManager(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(result))
 
+class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
+    """Handle requests in a separate thread."""
+    pass
+
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
                         datefmt='%d/%m/%Y %H:%M:%S',
@@ -53,7 +58,8 @@ if __name__ == '__main__':
 
     processor.initialize()
 
-    server_class = BaseHTTPServer.HTTPServer
+    # server_class = BaseHTTPServer.HTTPServer
+    server_class = ThreadedHTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), LearningManager)
     logging.info("Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER))
     try:

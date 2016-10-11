@@ -375,16 +375,16 @@ class MatrixFactorization(learning_interface.LearningInterface):
             return False, message
         user_index = index_user_map[user_id]
 
-        #Pair known papers with their indicies in the input
+        # Pair known papers with their indicies in the input
         paper_indices = [(index, index_paper_map[paper_id]) for index, paper_id in enumerate(papers) if paper_id in index_paper_map]
-        #Leave uknown papers separated
+        # Leave uknown papers separated
         uknown_papers = [index for index, paper_id in enumerate(papers) if paper_id not in index_paper_map]
 
         if len(paper_indices) != 0:
-            #Calculate ratings for all papers in known paper
+            # Calculate ratings for all papers in known paper
             ratings = self.model.predict_pair(user_index, tuple(pair[1] for pair in paper_indices))
 
-            #Sort known papers by rating (descending)
+            # Sort known papers by rating (descending)
             sorted_indices = [pair_index_id[0] for (pair_index_id, rating) in sorted(zip(paper_indices, ratings), key=lambda pair: pair[1], reverse = True)]
         else:
             sorted_indices = []

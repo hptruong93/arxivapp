@@ -1,6 +1,7 @@
 import requests
 import json
 import argparse
+import sys
 
 import config
 
@@ -10,6 +11,11 @@ PORT_NUMBER = config.port
 def do_request(data):
     x = requests.post(url, headers = headers, data = json.dumps(data))
     print x.json()
+    if x.status_code != 200:
+        sys.exit(1)
+
+    if not x.json()['success']:
+        sys.exit(2)
 
 def extract_data():
     data = {
