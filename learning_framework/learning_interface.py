@@ -1,5 +1,6 @@
 from abc import ABCMeta
 from abc import abstractmethod
+import threading
 
 class LearningInterface(object):
 
@@ -7,6 +8,16 @@ class LearningInterface(object):
 
     def __init__(self):
         super(LearningInterface, self).__init__()
+        self._lock = threading.Lock()
+
+    def is_locked(self):
+        return self._lock.locked()
+
+    def lock(self):
+        self._lock.acquire(True) # Blocking
+
+    def unlock(self):
+        self._lock.release()
 
     @abstractmethod
     def extract_data(self):
@@ -37,7 +48,7 @@ class LearningInterface(object):
             Reload data from databse or other sources, then train again
         """
         pass
-    
+
     @abstractmethod
     def validate(self):
         """
