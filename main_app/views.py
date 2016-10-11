@@ -105,9 +105,9 @@ def browse(request):
                                         additional_data = view_renderer.AdditionalData(
                                                                         None,
                                                                         filter_data,
-                                                                        section_message = 'Browse',
-                                                                        info_message = 'Limited to maximum {0} papers.\n'.format(config.MAX_ARTICLE_SORTING) +
-                                                                        'Sorting algorithm: {0}'.format(sort_strategy)))
+                                                                        displayed_filters = view_renderer.FilterDisplayed(make_default_choice = False),
+                                                                        section_message = 'All papers',
+                                                                        info_message = 'Limited to maximum {0} papers.\n'.format(config.MAX_ARTICLE_SORTING)))
 
 @auth_decorators.login_required
 def index(request):
@@ -120,6 +120,12 @@ def index(request):
 
         Only allow filtering by category
     """
+    # First update the latest activity for this user.
+    latest_activity = main_app_models.UserLastActivity()
+    latest_activity.user = request.user
+    latest_activity.last_activity = datetime.now()
+    latest_activity.save()
+
     today = utils_date.get_today()
 
     # Retrieve papers for latest tab
@@ -161,13 +167,13 @@ def index(request):
     # Retrieve papers for recommended tab
     # recommended_articles = recommendation_interface.index(request.user)
     # recommended_articles_data = view_renderer.TabData(recommended_articles, None, False)
-    recommended_articles_data = None #Disabled for now
+    recommended_articles_data = None # Disabled for now
 
     return view_renderer.render_papers(request, articles_data, cross_list_data, replacement_data, recommended_articles_data,
                                         additional_data = view_renderer.AdditionalData( None,
                                                                                         filter_data,
-                                                                                        displayed_filters = view_renderer.FilterDisplayed(date = False),
-                                                                                        info_message = 'Sorting algorithm: {0}'.format(sort_strategy)))
+                                                                                        section_message = 'Today\'s papers',
+                                                                                        displayed_filters = view_renderer.FilterDisplayed(date = False)))
 
 @auth_decorators.login_required
 def author(request, author_id):
@@ -176,9 +182,13 @@ def author(request, author_id):
 
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
     articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_args, filter_dict, order_by_fields)
+    print articles.query
+
     return view_renderer.render_papers(request, view_renderer.TabData(articles, None, False),
                                         additional_data = view_renderer.AdditionalData('All articles by %s' % author,
                                                                                         filter_data,
+                                                                                        displayed_filters = view_renderer.FilterDisplayed(
+                                                                                                make_default_choice = False),
                                                                                         section_message = 'Author'))
 
 @auth_decorators.login_required
@@ -191,7 +201,9 @@ def category(request, category_code):
     return view_renderer.render_papers(request, view_renderer.TabData(articles, None, False),
                                         additional_data = view_renderer.AdditionalData('All articles in %s' % category,
                                                                                         filter_data,
-                                                                                        displayed_filters = view_renderer.FilterDisplayed(category = False),
+                                                                                        displayed_filters = view_renderer.FilterDisplayed(
+                                                                                                category = False,
+                                                                                                make_default_choice = False),
                                                                                         section_message = 'Category'))
 
 @auth_decorators.login_required

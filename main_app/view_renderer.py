@@ -2,6 +2,7 @@ from django import shortcuts
 from django.core import paginator
 
 import time
+from datetime import datetime
 
 from main_app import models as main_app_models
 from main_app.history_tracking import history_tracking
@@ -23,15 +24,17 @@ class FilterDisplayed(object):
     """
         Containing any information about which filter to display. Default constructor displays all filters.
     """
-    def __init__(self, category = True, date = True):
+    def __init__(self, category = True, date = True, make_default_choice = True):
         super(FilterDisplayed, self).__init__()
         self.category = category
         self.date = date
+        self.make_default_choice = make_default_choice # The checkbox to allow user to make this filter default
 
     def to_dict(self):
         return {
             'category' : self.category,
-            'date' : self.date
+            'date' : self.date,
+            'make_default_choice' : self.make_default_choice
         }
 
 class AdditionalData(object):
@@ -161,9 +164,21 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
     sort_strategy = articles_data.sort_strategy
 
     articles, paginated_articles, surf_group = prepare_view_articles(request.user, articles, page_number, tab_name = 'latest', sort_strategy = sort_strategy, log_paper_surf = do_log)
+    # Retrieve user last login, which is considered to be the last date that is not today on which the user was active, or today if the former date does not exist
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    try:
+        recent_activities = main_app_models.UserLastActivity.objects.filter(user = request.user, last_activity__lt = today).order_by('-last_activity')
+        last_login = recent_activities[0]
+        last_login = last_login.last_activity
+    except: # Does not exist, just put today instead
+        import traceback
+        traceback.print_exc()
+        last_login = today
+
+    # Generate common data object
     data = {
         'request' : request,
-        'user_last_login' : utils_date.date_to_string(request.user.last_login),
+        'user_last_login' : utils_date.date_to_string(last_login),
         'articles' : articles,
         'paginated_articles' : paginated_articles,
         'latest_surf_group': surf_group.id if surf_group else ""

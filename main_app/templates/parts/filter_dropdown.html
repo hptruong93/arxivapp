@@ -28,14 +28,14 @@
 
             {% if displayed_filters.category %}
             <div class="form-group col-sm-12">
-                <label for="category">Category(ies):</label>
+                <label for="category">Area(s):</label>
                 <input type="text" id="input_filter_category" class="form-control" name="filter_category" value="{{ filters_sorts.category }}">
             </div>
             {% endif %}
 
             {% if displayed_filters.date %}
              <div class="form-group col-sm-6">
-                <label for="date" id="filter_from_date_label">From date (click to fill in last login):</label>
+                <label for="date" id="filter_from_date_label">From date (click here to fill in last login):</label>
                 <div style="display:none" id="filter_from_date_last_login">
                     {{ user_last_login }}
                 </div>
@@ -60,6 +60,8 @@
                     <option value="sort_by_title"> Title </option>
                 </select>
             </div> -->
+
+            {% if displayed_filters.make_default_choice %}
             <div class="form-group col-sm-6">
                 {% if filters_sorts.filter_make_default %}
                     <label><input type="checkbox" name="filter_make_default" value="make_default" checked> Make this default home filter</label>
@@ -67,6 +69,7 @@
                     <label><input type="checkbox" name="filter_make_default" value="make_default"> Make this default home filter</label>
                 {% endif %}
             </div>
+            {% endif %}
 
             <div class="form-group col-sm-12">
                 <button id="submit_filter" type="submit" class="btn btn-default"> Filters </button>

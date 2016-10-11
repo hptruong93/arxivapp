@@ -4,6 +4,20 @@ import abstract_models
 
 # Create your models here.
 
+# To update the database scheme, use
+# $python manage.py schemamigration main_app --auto
+# $python manage.py migrate main_app
+
+class UserLastActivity(models.Model):
+    """
+        Storing additional information about last time user visits the index page.
+    """
+    user = models.ForeignKey(auth_models.User)
+
+    last_activity = models.DateTimeField(null = True)
+
+
+
 class UserFilterSort(models.Model):
     user = models.ForeignKey(auth_models.User)
 
