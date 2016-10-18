@@ -137,9 +137,10 @@ def index(request):
     order_by_fields = ['-arxiv_id']
     articles = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
 
+    # No longer needed since merged latest and cross list tabs
     # Also sort papers in this tab
-    sort_strategy, articles = recommendation_interface.sort(request.user, articles)
-    articles_data = view_renderer.TabData(articles, sort_strategy)
+    # sort_strategy, articles = recommendation_interface.sort(request.user, articles)
+    # articles_data = view_renderer.TabData(articles, sort_strategy)
 
     # Retrieve papers for cross_list tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'cross_list')
@@ -150,9 +151,17 @@ def index(request):
     order_by_fields = ['-arxiv_id']
     cross_list = view_renderer.query_filter(main_app_models.Paper.objects, filter_args, filter_dict, order_by_fields)
 
+    # No longer needed since merged latest and cross list tabs
     # Also sort papers in this tab
-    sort_strategy, cross_list = recommendation_interface.sort(request.user, cross_list)
-    cross_list_data = view_renderer.TabData(cross_list, sort_strategy)
+    # sort_strategy, cross_list = recommendation_interface.sort(request.user, cross_list)
+    # cross_list_data = view_renderer.TabData(cross_list, sort_strategy)
+
+    # Merging two tabs
+    articles = list(articles) + list(cross_list) # Since there are a few paper in home page, we can fetch all of them without worrying about performance.
+    # Sort the merged articles
+    sort_strategy, articles = recommendation_interface.sort(request.user, articles)
+    articles_data = view_renderer.TabData(articles, sort_strategy)
+
 
     # Retrieve papers for replacement tab
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request, default_filter = True, filter_type = 'replacement')
@@ -170,7 +179,7 @@ def index(request):
     # recommended_articles_data = view_renderer.TabData(recommended_articles, None, False)
     recommended_articles_data = None # Disabled for now
 
-    return view_renderer.render_papers(request, articles_data, cross_list_data, replacement_data, recommended_articles_data,
+    return view_renderer.render_papers(request, articles_data, None, replacement_data, recommended_articles_data,
                                         additional_data = view_renderer.AdditionalData( None,
                                                                                         filters_sorts = filter_data,
                                                                                         section_message = 'Today\'s papers',

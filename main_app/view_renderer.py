@@ -156,7 +156,7 @@ def prepare_view_articles(current_user, articles, page_number, log_paper_surf = 
 
     return utils_general._n_group(sorted_articles, config.MAX_COLUMN_DISPLAYED), sorted_articles, surf_group
 
-def render_papers(request, articles_data, cross_list_data = None, replacement_data = None, recommended_articles_data = None, additional_data = None):
+def render_papers(request, articles_data, tab1_data = None, tab2_data = None, recommended_articles_data = None, additional_data = None):
     """
         Render the page with the main tab and optional cross list, replacement and recommendation tabs.
         Construct the appropriate data object to pass on to template for html rendering.
@@ -189,34 +189,34 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         'latest_surf_group': surf_group.id if surf_group else ""
     }
 
-    if cross_list_data is not None:
-        do_log = cross_list_data.log_paper_surf
-        cross_list = cross_list_data.articles
-        sort_strategy = cross_list_data.sort_strategy
+    if tab1_data is not None:
+        do_log = tab1_data.log_paper_surf
+        cross_list = tab1_data.articles
+        sort_strategy = tab1_data.sort_strategy
 
         tab_name = additional_data.tab_names[1] if additional_data and additional_data.tab_names else 'cross_list'
-        cross_list_articles, paginated_cross_list_articles, surf_group = prepare_view_articles(request.user, cross_list, page_number, tab_name = 'cross_list', sort_strategy = sort_strategy, log_paper_surf= do_log)
-        data['cross_list_articles'] = cross_list_articles
-        data['paginated_cross_list_articles'] = paginated_cross_list_articles
-        data['cross_list_surf_group'] = surf_group.id
+        tab1_articles, paginated_tab1_articles, surf_group = prepare_view_articles(request.user, cross_list, page_number, tab_name = tab_name, sort_strategy = sort_strategy, log_paper_surf= do_log)
+        data['tab1_articles'] = tab1_articles
+        data['paginated_tab1_articles'] = paginated_tab1_articles
+        data['tab1_surf_group'] = surf_group.id
 
-    if replacement_data is not None:
-        do_log = replacement_data.log_paper_surf
-        replacement = replacement_data.articles
-        sort_strategy = replacement_data.sort_strategy
+    if tab2_data is not None:
+        do_log = tab2_data.log_paper_surf
+        replacement = tab2_data.articles
+        sort_strategy = tab2_data.sort_strategy
 
         tab_name = additional_data.tab_names[2] if additional_data and additional_data.tab_names else 'replacement'
-        replacement_articles, paginated_replacement_articles, surf_group = prepare_view_articles(request.user, replacement, page_number, tab_name = 'replacement', sort_strategy = sort_strategy, log_paper_surf = do_log)
-        data['replacement_articles'] = replacement_articles
-        data['paginated_replacement_articles'] = paginated_replacement_articles
-        data['replacement_surf_group'] = surf_group.id
+        tab2_articles, paginated_tab2_articles, surf_group = prepare_view_articles(request.user, replacement, page_number, tab_name = tab_name, sort_strategy = sort_strategy, log_paper_surf = do_log)
+        data['tab2_articles'] = tab2_articles
+        data['paginated_tab2_articles'] = paginated_tab2_articles
+        data['tab2_surf_group'] = surf_group.id
 
     if recommended_articles_data is not None:
         do_log = recommended_articles_data.log_paper_surf
         recommended_articles = recommended_articles_data.articles
 
         tab_name = self.additional_data.tab_names[3] if self.additional_data and self.additional_data.tab_names else 'recommended'
-        recommended_articles, paginated_recommended_articles, _ = prepare_view_articles(request.user, recommended_articles, page_number, tab_name = 'recommended', log_paper_surf = do_log)
+        recommended_articles, paginated_recommended_articles, _ = prepare_view_articles(request.user, recommended_articles, page_number, tab_name = tab_name, log_paper_surf = do_log)
         data['recommended_articles'] = recommended_articles
         data['paginated_recommended_articles'] = paginated_recommended_articles
 

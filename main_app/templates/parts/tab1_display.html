@@ -1,10 +1,10 @@
-{% for article_group in cross_list_articles %}
+{% for article_group in tab1_articles %}
 <div class="row">
     {% for article in article_group %}
 
     <div class="col-sm-12 portfolio-item">
-        {% if cross_list_surf_group %}
-        <h4> <a href="{% url 'paper' article.arxiv_id %}?surf_group={{ cross_list_surf_group }}"> {{ article.title }} </a> </h4>
+        {% if tab1_surf_group %}
+        <h4> <a href="{% url 'paper' article.arxiv_id %}?surf_group={{ tab1_surf_group }}"> {{ article.title }} </a> </h4>
         {% else %}
         <h4> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a> </h4>
         {% endif %}
@@ -36,16 +36,16 @@
 
 <div class="pagination">
     <span class="step-links">
-        {% if paginated_cross_list_articles.has_previous %}
-            <a href="?page={{ paginated_cross_list_articles.previous_page_number }}">Previous</a>
+        {% if paginated_tab1_articles.has_previous %}
+            <a href="?page={{ paginated_tab1_articles.previous_page_number }}">Previous</a>
         {% endif %}
 
         <span class="current">
-            Page {{ paginated_cross_list_articles.number }} of {{ paginated_cross_list_articles.paginator.num_pages }}
+            Page {{ paginated_tab1_articles.number }} of {{ paginated_tab1_articles.paginator.num_pages }}
         </span>
 
-        {% if paginated_cross_list_articles.has_next %}
-            <a href="?page={{ paginated_cross_list_articles.next_page_number }}">Next</a>
+        {% if paginated_tab1_articles.has_next %}
+            <a href="?page={{ paginated_tab1_articles.next_page_number }}">Next</a>
         {% endif %}
     </span>
 </div>

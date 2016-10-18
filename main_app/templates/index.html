@@ -63,7 +63,7 @@
                     <li class="active"><a href="#tab1">Papers</a></li>
                     {% endif %}
 
-                    {% if cross_list_articles %}
+                    {% if tab1_articles %}
                         {% if tab_names.1 %}
                     <li><a href="#tab2">{{ tab_names.1 }}</a></li>
                         {% else %}
@@ -71,7 +71,7 @@
                         {% endif %}
                     {% endif %}
 
-                    {% if replacement_articles %}
+                    {% if tab2_articles %}
                         {% if tab_names.2 %}
                     <li><a href="#tab3">{{ tab_names.2 }}</a></li>
                         {% else %}
@@ -91,15 +91,15 @@
                     </div>
                     {% endif %}
 
-                    {% if cross_list_articles %}
+                    {% if tab1_articles %}
                     <div id="tab2" class="tab">
-                        {% include "parts/cross_list_display.html" %}
+                        {% include "parts/tab1_display.html" %}
                     </div>
                     {% endif %}
 
-                    {% if replacement_articles %}
+                    {% if tab2_articles %}
                     <div id="tab3" class="tab">
-                        {% include "parts/replacement_display.html" %}
+                        {% include "parts/tab2_display.html" %}
                     </div>
                     {% endif %}
 
