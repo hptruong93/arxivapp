@@ -127,12 +127,8 @@ def _grade(lda_result, word_counters):
 
     output = np.dot(lda_result, matrix.T) # (topics x words) x (words x paper) --> topics x paper
 
-    # Now perform normalization.
-    # Note that here we utilize the default behavior of sum in numpy does summing by column, which is summing by paper as we want.
-    # In addition, divide also perform operations row by row, which is also what we want.
-    divisor_creator = np.vectorize(_create_divisor) # This is to avoid dividing by zero
-    output = np.true_divide(output, divisor_creator(sum(output))) # Dividing each column by its sum to normalize
-
+    # Now perform normalization by paper (column): (x - mean) / std
+    output = (output - np.mean(output, axis = 0)) / np.std(output, axis = 0)
     return output.T
 
 def extract_lda(papers, clean_up = True):
