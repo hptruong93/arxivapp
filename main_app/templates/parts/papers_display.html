@@ -11,7 +11,7 @@
         <div>
         By:
         {% for author in article.all_authors %}
-            <a href="{% url 'author' author.id %}">{{ author }}</a>,
+            <a href="{% url 'author' author.id %}">{{ author }}</a>{% if not forloop.last %},{% endif %}
         {% endfor %}
         </div>
         <div class="text-right">
@@ -20,7 +20,7 @@
         <div>
             In:
             {% for category in article.all_categories %}
-                <a href="{% url 'category' category.code %}">{{ category }}</a>,
+                <a href="{% url 'category' category.code %}">{{ category }}</a>{% if not forloop.last %},{% endif %}
             {% endfor %}
         </div>
 

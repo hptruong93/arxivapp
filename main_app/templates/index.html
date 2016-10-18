@@ -57,14 +57,26 @@
 
             <div class="tabs">
                 <ul class="tab-links">
+                    {% if tab_names.0 %}
+                    <li class="active"><a href="#tab1">{{ tab_names.0 }}</a></li>
+                    {% else %}
                     <li class="active"><a href="#tab1">Papers</a></li>
+                    {% endif %}
 
                     {% if cross_list_articles %}
+                        {% if tab_names.1 %}
+                    <li><a href="#tab2">{{ tab_names.1 }}</a></li>
+                        {% else %}
                     <li><a href="#tab2">Cross list</a></li>
+                        {% endif %}
                     {% endif %}
 
                     {% if replacement_articles %}
+                        {% if tab_names.2 %}
+                    <li><a href="#tab3">{{ tab_names.2 }}</a></li>
+                        {% else %}
                     <li><a href="#tab3">Replacement</a></li>
+                        {% endif %}
                     {% endif %}
 
                     <!-- {% if recommended_articles %}

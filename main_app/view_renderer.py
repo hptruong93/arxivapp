@@ -41,18 +41,22 @@ class AdditionalData(object):
     """
         Containing any additional information used for rendering (e.g. show/hide certain elements), title, and other customizations)
     """
-    def __init__(self, header_message = None, filters_sorts = None, displayed_filters = FilterDisplayed(), section_message = None, info_message = None):
+    def __init__(self, header_message = None, tab_names = None, filters_sorts = None, displayed_filters = FilterDisplayed(), section_message = None, info_message = None):
         super(AdditionalData, self).__init__()
-        self.header_message = header_message
+        self.header_message = header_message # Name for the page, shown as header on top
+        self.tab_names = tab_names # List of names of the tabs in the page
         self.filters_sorts = filters_sorts
-        self.displayed_filters = displayed_filters
-        self.section_message = section_message
+        self.displayed_filters = displayed_filters # Information about which filter to be displayed
+        self.section_message = section_message # Small message under header to inform user of something
         self.info_message = info_message
 
     def to_dict(self):
         output = {}
         if self.header_message:
             output['header_message'] = self.header_message
+
+        if self.tab_names:
+            output['tab_names'] = self.tab_names
 
         if self.filters_sorts:
             output['filters_sorts'] = self.filters_sorts
@@ -163,7 +167,8 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
     articles = articles_data.articles
     sort_strategy = articles_data.sort_strategy
 
-    articles, paginated_articles, surf_group = prepare_view_articles(request.user, articles, page_number, tab_name = 'latest', sort_strategy = sort_strategy, log_paper_surf = do_log)
+    tab_name = additional_data.tab_names[0] if additional_data and additional_data.tab_names else 'latest'
+    articles, paginated_articles, surf_group = prepare_view_articles(request.user, articles, page_number, tab_name = tab_name, sort_strategy = sort_strategy, log_paper_surf = do_log)
     # Retrieve user last login, which is considered to be the last date that is not today on which the user was active, or today if the former date does not exist
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     try:
@@ -189,6 +194,7 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         cross_list = cross_list_data.articles
         sort_strategy = cross_list_data.sort_strategy
 
+        tab_name = additional_data.tab_names[1] if additional_data and additional_data.tab_names else 'cross_list'
         cross_list_articles, paginated_cross_list_articles, surf_group = prepare_view_articles(request.user, cross_list, page_number, tab_name = 'cross_list', sort_strategy = sort_strategy, log_paper_surf= do_log)
         data['cross_list_articles'] = cross_list_articles
         data['paginated_cross_list_articles'] = paginated_cross_list_articles
@@ -199,6 +205,7 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         replacement = replacement_data.articles
         sort_strategy = replacement_data.sort_strategy
 
+        tab_name = additional_data.tab_names[2] if additional_data and additional_data.tab_names else 'replacement'
         replacement_articles, paginated_replacement_articles, surf_group = prepare_view_articles(request.user, replacement, page_number, tab_name = 'replacement', sort_strategy = sort_strategy, log_paper_surf = do_log)
         data['replacement_articles'] = replacement_articles
         data['paginated_replacement_articles'] = paginated_replacement_articles
@@ -208,6 +215,7 @@ def render_papers(request, articles_data, cross_list_data = None, replacement_da
         do_log = recommended_articles_data.log_paper_surf
         recommended_articles = recommended_articles_data.articles
 
+        tab_name = self.additional_data.tab_names[3] if self.additional_data and self.additional_data.tab_names else 'recommended'
         recommended_articles, paginated_recommended_articles, _ = prepare_view_articles(request.user, recommended_articles, page_number, tab_name = 'recommended', log_paper_surf = do_log)
         data['recommended_articles'] = recommended_articles
         data['paginated_recommended_articles'] = paginated_recommended_articles

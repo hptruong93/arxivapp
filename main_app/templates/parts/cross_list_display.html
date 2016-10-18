@@ -9,18 +9,18 @@
         <h4> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a> </h4>
         {% endif %}
         <div>
-        By: 
+        By:
         {% for author in article.all_authors %}
-            <a href="{% url 'author' author.id %}">{{ author }}</a>,
+            <a href="{% url 'author' author.id %}">{{ author }}</a>{% if not forloop.last %},{% endif %}
         {% endfor %}
         </div>
         <div class="text-right">
             On: {{ article.last_resigered_date|date:"DATETIME_FORMAT" }}
         </div>
         <div>
-            In: 
+            In:
             {% for category in article.all_categories %}
-                <a href="{% url 'category' category.code %}">{{ category }}</a>,
+                <a href="{% url 'category' category.code %}">{{ category }}</a>{% if not forloop.last %},{% endif %}
             {% endfor %}
         </div>
 
@@ -28,7 +28,7 @@
             <div class="show-more"> <a href="#">Full Abstract</a> </div>
             <div class="text-content short-text"> {{ article.abstract }} </div>
         </div>
-    </div> 
+    </div>
     {% endfor %}
 </div>
 <hr>

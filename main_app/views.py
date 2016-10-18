@@ -99,15 +99,16 @@ def browse(request):
 
     # Also sort papers
     sort_strategy, articles = recommendation_interface.sort(request.user, articles)
-    articles_data = view_renderer.TabData(articles, sort_strategy, False)
+    articles_data = view_renderer.TabData(articles, sort_strategy, True)
     return view_renderer.render_papers( request,
                                         articles_data, None, None, None,
                                         additional_data = view_renderer.AdditionalData(
                                                                         None,
-                                                                        filter_data,
+                                                                        tab_names = ['Paper search'],
+                                                                        filters_sorts = filter_data,
                                                                         displayed_filters = view_renderer.FilterDisplayed(make_default_choice = False),
-                                                                        section_message = 'All papers',
-                                                                        info_message = 'Limited to maximum {0} papers.\n'.format(config.MAX_ARTICLE_SORTING)))
+                                                                        section_message = 'Paper search',
+                                                                        info_message = 'Limited to a maximum {0} papers.\n'.format(config.MAX_ARTICLE_SORTING)))
 
 @auth_decorators.login_required
 def index(request):
@@ -171,7 +172,7 @@ def index(request):
 
     return view_renderer.render_papers(request, articles_data, cross_list_data, replacement_data, recommended_articles_data,
                                         additional_data = view_renderer.AdditionalData( None,
-                                                                                        filter_data,
+                                                                                        filters_sorts = filter_data,
                                                                                         section_message = 'Today\'s papers',
                                                                                         displayed_filters = view_renderer.FilterDisplayed(date = False)))
 
@@ -186,7 +187,7 @@ def author(request, author_id):
 
     return view_renderer.render_papers(request, view_renderer.TabData(articles, None, False),
                                         additional_data = view_renderer.AdditionalData('All articles by %s' % author,
-                                                                                        filter_data,
+                                                                                        filters_sorts = filter_data,
                                                                                         displayed_filters = view_renderer.FilterDisplayed(
                                                                                                 make_default_choice = False),
                                                                                         section_message = 'Author'))
@@ -200,7 +201,7 @@ def category(request, category_code):
     articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(categories__code = category_code), filter_args, filter_dict, order_by_fields)
     return view_renderer.render_papers(request, view_renderer.TabData(articles, None, False),
                                         additional_data = view_renderer.AdditionalData('All articles in %s' % category,
-                                                                                        filter_data,
+                                                                                        filters_sorts = filter_data,
                                                                                         displayed_filters = view_renderer.FilterDisplayed(
                                                                                                 category = False,
                                                                                                 make_default_choice = False),
