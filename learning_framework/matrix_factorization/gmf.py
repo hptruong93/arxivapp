@@ -11,6 +11,7 @@ import time
 from joblib import Parallel, delayed
 from pdb import set_trace
 
+logger = logging.getLogger(__name__)
 np.random.seed(0)
 
 root='/home/statler/lcharlin/'
@@ -46,8 +47,8 @@ def load_data(dir):
   nusers = int(np.max(d[:,0]))+1
   nitems = int(np.max(d[:,1]))+1
 
-  logging.info('+ read data from %s', dir)
-  logging.info('+ nusers %s nitems %s', nusers, nitems)
+  logger.info('+ read data from %s', dir)
+  logger.info('+ nusers %s nitems %s', nusers, nitems)
   return nusers, nitems, train, valid, test, idx0_user, idx0_item
 
 def to_mat(d, nusers, nitems):
@@ -71,7 +72,7 @@ def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=2):#np.inf)
       #vprec, _, num_users = m.prec_err(valid_data_row, train_data_row, T=T)
       #vmar, num_users = m.mar_err(valid_data_row, train_data_row)
       vmrr, num_users = m.mrr_err(valid_data_row, train_data_row)
-      logging.info('%d: train mse: %f, valid mse: %f, valid mrr (%d users): %f' % (iter, trerr, verr, num_users, vmrr))
+      logger.info('%d: train mse: %f, valid mse: %f, valid mrr (%d users): %f' % (iter, trerr, verr, num_users, vmrr))
     if iter % 10 == 0 and iter != 0:
       m.save(train_data_row, train_data_col)
 
@@ -89,11 +90,11 @@ def optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=2):#np.inf)
 def run(m, train_data, valid_data, test_data, nusers, nitems, T, test_only=False, save_model = False):
 
   if not test_only:
-    logging.info('+ optimize model')
+    logger.info('+ optimize model')
     try:
       optimize(m, train_data, valid_data, nusers, nitems, T)
     except KeyboardInterrupt:
-      logging.info('started shutdown procedures')
+      logger.info('started shutdown procedures')
       optimize(m, train_data, valid_data, nusers, nitems, T, max_iters=1)
 
   obs_data_row, _ = to_mat(np.vstack([train_data, valid_data]), nusers, nitems)
@@ -104,10 +105,10 @@ def run(m, train_data, valid_data, test_data, nusers, nitems, T, test_only=False
   tprec, ntprec, num_users = m.prec_err(test_data_row, obs_data_row, full=True, T=T, output_ranking=True)
   #tmar, num_users = m.mar_err(test_data_row, obs_data_row, full=True)
   tmrr, num_users = m.mrr_err(test_data_row, obs_data_row, full=True)
-  logging.info('test err: %f, test mrr (%d users): %f\n' % (terr, num_users, tmrr))
+  logger.info('test err: %f, test mrr (%d users): %f\n' % (terr, num_users, tmrr))
 
   if not test_only and save_model:
-    logging.info('saving model')
+    logger.info('saving model')
     train_data_row, train_data_col = to_mat(np.vstack([train_data, valid_data]), nusers, nitems)
     m.save(train_data_row, train_data_col)
 
@@ -212,8 +213,8 @@ class Model:
       self._idx0_item = 1
 
     if self._nneg:
-      logging.info('\t+ non-negative factors')
-    logging.info('+ model created')
+      logger.info('\t+ non-negative factors')
+    logger.info('+ model created')
 
   def load(self, U, V):
     self._U = U
@@ -342,7 +343,7 @@ class Model:
       #idx = set(preds.argsort()[-T:])
       idx = set(np.argpartition(-preds,T)[:T])
       #if idx_ != idx:
-      #  logging.info(len(idx), len(idx_))
+      #  logger.info(len(idx), len(idx_))
       #  set_trace()
       num_inter = len(idx.intersection(nnz_idx))
       normalized_precision += num_inter/float(min(T, nnz_idx.size))
@@ -399,12 +400,12 @@ if __name__ == '__main__':
 
   if not os.path.exists(eval_dir):
     os.mkdir(eval_dir)
-    logging.info('+ creating eval dir: %s', eval_dir)
+    logger.info('+ creating eval dir: %s', eval_dir)
   else:
-    logging.info('+ using eval dir: %s', eval_dir)
+    logger.info('+ using eval dir: %s', eval_dir)
 
   b = float(train.shape[0]) / (nusers * nitems)
-  logging.info('+ b: %s', b)
+  logger.info('+ b: %s', b)
 
   model = Model(nusers, nitems, b=b, k=args.k, u_vprior=args.lambda_u, v_vprior=args.lambda_v, experiment_dir=eval_dir,nneg=args.nneg,idx0_user=idx0_user, idx0_item=idx0_item)
   if args.load is None:
@@ -419,15 +420,15 @@ if __name__ == '__main__':
     # set_trace()
     if U.shape[1] != args.k:
       U = U[:,-args.k:]
-      logging.info('resizing U to %s', U.shape)
+      logger.info('resizing U to %s', U.shape)
     if V.shape[1] != args.k:
       V = V[:,-args.k:]
-      logging.info('resizing V to %s', V.shape)
+      logger.info('resizing V to %s', V.shape)
     model.load(U,V)
-    logging.info('+ U&V loaded')
+    logger.info('+ U&V loaded')
     errs = run(model, train, valid, test, nusers, nitems, 100, test_only=True)
 
-  logging.info("Finished running...")
+  logger.info("Finished running...")
 
   if not os.path.exists('results.txt'):
     with open('results.txt', 'w') as f:

@@ -49,22 +49,23 @@ class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
     pass
 
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
+    logging.basicConfig(format='[%(asctime)s][%(levelname)s][%(filename)s][%(lineno)d] - %(message)s',
                         datefmt='%d/%m/%Y %H:%M:%S',
                         filename='/home/ml/arxivapp/site/arxivapp/learning_framework/manager.log',
                         filemode='a',
                         level=logging.DEBUG)
-    logging.info('Initializing manager.')
+    logger = logging.getLogger(__name__)
+    logger.info('Initializing manager.')
 
     processor.initialize()
 
     # server_class = BaseHTTPServer.HTTPServer
     server_class = ThreadedHTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), LearningManager)
-    logging.info("Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER))
+    logger.info("Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        logging.info("Caught interrupt signal. Terminating...")
+        logger.info("Caught interrupt signal. Terminating...")
     httpd.server_close()
-    logging.info("Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER))
+    logger.info("Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER))

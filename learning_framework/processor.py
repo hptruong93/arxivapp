@@ -5,6 +5,8 @@ import sys
 import config
 from matrix_factorization import matrix_factorization
 
+logger = logging.getLogger(__name__)
+
 """
 request = {
     'action' : 'method name',
@@ -41,7 +43,7 @@ def initialize():
     matrix_factorization_object = matrix_factorization.MatrixFactorization()
 
 def process(request):
-    logging.info('Serving request {0}'.format(request))
+    logger.info('Serving request {0}'.format(request))
     if 'action' not in request:
         return _return_failure('Has to specify an action')
     action = request['action']
@@ -73,7 +75,7 @@ def process(request):
             return _return_success(message)
     except:
         trace = traceback.format_exc()
-        logging.warning(trace)
+        logger.warning(trace)
         return _return_failure(trace)
     finally:
         learning_module.unlock()

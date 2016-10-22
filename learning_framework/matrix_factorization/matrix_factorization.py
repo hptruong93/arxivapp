@@ -22,10 +22,27 @@ from lda import lda
 import gmf
 import learning_interface
 
+logger = logging.getLogger(__name__)
 
 DATA_ROOT = '/home/ml/arxivapp/site/arxivapp/test_data'
 #Start year
 YEAR = 2014
+
+
+class ModelData(object):
+    """
+        Data for training model.
+    """
+    def __init__(self, arg):
+        super(ModelData, self).__init__()
+        category_map = {} # Map from category code -> index (0-n)
+        category_reversed_map = {} # Map from index (0-n) -> category_code
+        index_paper_map = {} # Map from paper_id -> index (0-n)
+        index_paper_reversed_map = {} # Map from index --> paper_id
+        index_user_map = {} # Map from user_id -> index (0-n)
+        train_points = {}
+        v_matrix = {}
+
 
 #Global variables
 category_map = {} #Map from category code -> index (0-n)
@@ -89,7 +106,7 @@ def map_paper_data():
     index_paper_reversed_map = {}
 
     doing = get_interested_papers()
-    logging.info("Collecting {0} papers".format(doing.count()))
+    logger.info("Collecting {0} papers".format(doing.count()))
 
     count = 0
     for paper in doing:
@@ -104,7 +121,7 @@ def map_user_data():
     global index_user_map
     index_user_map = {}
 
-    logging.info("Collecting user data")
+    logger.info("Collecting user data")
     doing = auth_models.User.objects.all()
     count = 0
     for user in doing:
@@ -117,13 +134,13 @@ def map_uv():
         If a user views a paper, the (user, paper) value in the matrix is incremented by 1
         If a user clicks on a paper and see it (pdf), the (user, paper) value in the matrix is incremented by 2
     """
-    logging.info("Forming UxV matrix")
+    logger.info("Forming UxV matrix")
     global train_points
     train_points = {}
 
     def _add_point(arxiv_id, user_id, point = 1):
         if arxiv_id not in index_paper_map:
-            logging.info("Something wrong?")
+            logger.info("Something wrong?")
             return
 
         user_index = index_user_map[user_id]
@@ -153,7 +170,7 @@ def map_category():
     category_map = {}
     category_reversed_map = {}
 
-    logging.info("Collecting categories")
+    logger.info("Collecting categories")
     index = 0
     for category in models.Category.objects.all():
         category_map[category.code] = index
@@ -167,7 +184,7 @@ def generate_v_matrix():
 
         matrix[paper][lda_topic] = lda_normalized_value if the normalized value is not zero
     """
-    logging.info("Generating V matrix")
+    logger.info("Generating V matrix")
     global v_matrix
     v_matrix = {}
     tasks = []
@@ -229,12 +246,14 @@ def generate_v_matrix():
 
 
 def print_output():
-    global train_points
-    logging.info("Printing to files")
+    global train_points, v_matrix
+    logger.info("Printing to files")
     write_dict(index_paper_map, os.path.join(DATA_ROOT, 'paper_map.tsv'))
     write_dict(index_user_map, os.path.join(DATA_ROOT, 'user_map.tsv'))
     write_dict(category_map, os.path.join(DATA_ROOT, 'category_map.tsv'))
     write_double_dict(v_matrix, os.path.join(DATA_ROOT, 'V.tsv'))
+
+    v_matrix = {} # Free memory
 
     while True:
         to_train_points, non_train_points = split_dict(train_points, 0.8)
@@ -295,14 +314,15 @@ class MatrixFactorization(learning_interface.LearningInterface):
 
         if not os.path.exists(eval_dir):
             os.mkdir(eval_dir)
-            logging.info('+ creating eval dir: %s', eval_dir)
+            logger.info('+ creating eval dir: %s', eval_dir)
         else:
-            logging.info('+ using eval dir: %s', eval_dir)
+            logger.info('+ using eval dir: %s', eval_dir)
 
         b = float(train.shape[0]) / (nusers * nitems)
-        logging.info('+ b: %s', b)
+        logger.info('+ b: %s', b)
 
         self.model = gmf.Model(nusers, nitems, b=b, k=k, u_vprior=lambda_u, v_vprior=lambda_v, experiment_dir=eval_dir,nneg=input_nneg,idx0_user=idx0_user, idx0_item=idx0_item)
+
         if not input_load_data:
             errs = gmf.run(self.model, train, valid, test, nusers, nitems, 100)
         else:
@@ -314,12 +334,12 @@ class MatrixFactorization(learning_interface.LearningInterface):
 
             if U.shape[1] != k:
                 U = U[:,-k:]
-                logging.info('resizing U to %s', U.shape)
+                logger.info('resizing U to %s', U.shape)
             if V.shape[1] != k:
                 V = V[:,-k:]
-                logging.info('resizing V to %s', V.shape)
+                logger.info('resizing V to %s', V.shape)
             self.model.load(U,V)
-            logging.info('+ U&V loaded')
+            logger.info('+ U&V loaded')
             errs = gmf.run(self.model, train, valid, test, nusers, nitems, 100, test_only=False)
 
         return True, "Train data"
@@ -352,7 +372,7 @@ class MatrixFactorization(learning_interface.LearningInterface):
         return False, "Test data"
 
     def predict(self, user_id):
-        logging.info("Predicting for user_id {0}".format(user_id))
+        logger.info("Predicting for user_id {0}".format(user_id))
 
         if user_id not in index_user_map:
             message = "Cannot find user with id {0}".format(user_id)
