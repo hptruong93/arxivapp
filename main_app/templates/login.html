@@ -46,7 +46,7 @@
     <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
 
     <div class="container">
-      <form class="form-signin" action="{% url 'login' %}" method="post">
+      <form class="form-signin" action="{% url 'arxiv_login' %}" method="post">
         {% csrf_token %}
         <h2 class="form-signin-heading">ARXIV</h2>
         <label for="user_email" class="sr-only">Email address</label>
@@ -61,7 +61,8 @@
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
       </form>
 
-      <a href="{% url 'signup' %}">New user? Sign up!</a>
+      <p> <a href="{% url 'signup' %}">New user? Sign up!</a> </p>
+      <p> Or login using <a href="{% url 'social:begin' 'google-oauth2' %}?next=/"> <img src="{% static 'img/google_plus.png' %}" alt="G+ login" width="42" height="42"> </a> </p>
     </div> <!-- /container -->
 
      <!-- jQuery -->

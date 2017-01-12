@@ -5,9 +5,9 @@ from main_app import views
 
 urlpatterns = patterns('',
     url(r'^$', views.index, name='index'),
-    url(r'^login$', views.login, name='login'),
+    url(r'^login$', views.login, name='arxiv_login'),
     url(r'^login/(.*)$', views.login, name='login_link'),
-    url(r'^logout$', views.logout, name='logout'),
+    url(r'^logout$', views.logout, name='arxiv_logout'),
     url(r'^signup$', views.signup, name='signup'),
 
     url(r'^browse$', views.browse, name='browse'),

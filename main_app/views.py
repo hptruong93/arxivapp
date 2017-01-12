@@ -48,7 +48,7 @@ def signup(request):
         user = auth.models.User.objects.create_user(username=username, password=password, email = email)
         user.save()
 
-        return http.HttpResponseRedirect(urlresolvers.reverse('login'))
+        return http.HttpResponseRedirect(urlresolvers.reverse('arxiv_login'))
     except KeyError as e:
         return shortcuts.render(request, 'signup.html')
     except IntegrityError:
