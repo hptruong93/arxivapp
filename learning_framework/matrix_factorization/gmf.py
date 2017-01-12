@@ -285,7 +285,7 @@ class Model:
       preds[np.array(obs_mat[u,:].nonzero()[1]).flatten()] = -np.inf # remove train
 
       rr += (1. / (np.argsort(np.argsort(-preds))[test_idx] + 1)).sum()
-    mrr = rr / (len(users) - user_wo_ratings) if len(users) != user_wo_ratings else 'undefined'
+    mrr = rr / (len(users) - user_wo_ratings) if len(users) != user_wo_ratings else 1.0
 
     return mrr, len(users)-user_wo_ratings
 

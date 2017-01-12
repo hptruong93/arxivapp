@@ -53,7 +53,7 @@ if __name__ == '__main__':
                         datefmt='%d/%m/%Y %H:%M:%S',
                         filename='/home/ml/arxivapp/site/arxivapp/learning_framework/manager.log',
                         filemode='a',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.info('Initializing manager.')
 

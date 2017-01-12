@@ -39,6 +39,14 @@ def train():
         }
     do_request(data)
 
+def retrain():
+    data = {
+            'action' : 'retrain',
+            'args' : [config.CATEGORY_COUNT + config.LDA_TOPIC_COUNT, 1, 1],
+            'kwargs' : {'input_load_data' : '/home/ml/arxivapp/site/arxivapp/test_data'}
+        }
+    do_request(data)
+
 def predict():
     data = {
             'action' : 'predict',
@@ -63,6 +71,8 @@ if __name__ == "__main__":
 
     if args.f == 'train':
         train()
+    elif args.f == 'retrain':
+        retrain()
     elif args.f == 'predict':
         predict()
     elif args.f == 'sort':
