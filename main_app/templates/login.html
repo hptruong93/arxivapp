@@ -64,6 +64,7 @@
       </form>
 
       <p> <a href="{% url 'signup' %}">New user? Sign up!</a> </p>
+      <p> <a href="{% url 'password_reset' %}">Forgot password?</a> </p>
       <p> Or login using <a href="{% url 'social:begin' 'google-oauth2' %}?next=/"> <img src="{% static 'img/google_plus.png' %}" alt="G+ login" width="42" height="42"> </a> </p>
     </div> <!-- /container -->
 
