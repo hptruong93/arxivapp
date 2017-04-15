@@ -118,6 +118,14 @@ class IndexedPaper(models.Model):
     in_page_index = models.IntegerField()
     surf_group = models.ForeignKey(PaperSurfHistory)
 
+class PaperBookmark(models.Model):
+    """
+        This represents a bookmark for a paper that a user makes.
+    """
+    user = models.ForeignKey(auth_models.User)
+    paper = models.ForeignKey(Paper)
+    created_time = models.DateTimeField(auto_now_add=True)
+
 class PaperHistory(abstract_models.AbstractUserHistory):
     """
         Logged when user clicks on a specific paper.
@@ -159,7 +167,12 @@ class SearchHistory(abstract_models.AbstractUserHistory):
 
 class FullPaperViewHistory(abstract_models.AbstractUserHistory):
     """
-        When user clicks on a link to view full paper content (e.g. pdf link)
+        When user clicks on a link to view full paper content (i.e. pdf link)
     """
     paper = models.ForeignKey(Paper)
 
+class PaperAbstractViewHistory(abstract_models.AbstractUserHistory):
+    """
+        When user clicks on a link to view paper abstract on arxiv (i.e. arxiv.org/abs/<id>)
+    """
+    paper = models.ForeignKey(Paper)

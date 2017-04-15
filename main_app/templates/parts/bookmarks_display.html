@@ -1,0 +1,52 @@
+{% for article_group in articles %}
+<div class="row">
+    {% for article in article_group %}
+
+    <div class="col-sm-12 portfolio-item">
+        {% if latest_surf_group %}
+        <h4> <a href="{% url 'paper' article.arxiv_id %}?surf_group={{ latest_surf_group }}"> {{ article.title }} </a> </h4>
+        {% else %}
+        <h4> <a href="{% url 'paper' article.arxiv_id %}"> {{ article.title }} </a> </h4>
+        {% endif %}
+        <div>
+        By:
+        {% for author in article.all_authors %}
+            <a href="{% url 'author' author.id %}">{{ author }}</a>{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        </div>
+        <div class="text-right">
+            On: {{ article.last_resigered_date|date:"DATETIME_FORMAT" }}
+            <input type="checkbox" id="check_box_{{ article.arxiv_id }}" value="newsletter">
+        </div>
+        <div>
+            In:
+            {% for category in article.all_categories %}
+                <a href="{% url 'category' category.code %}">{{ category }}</a>{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="text-container">
+            <div class="show-more"> <a href="#">Full Abstract</a> </div>
+            <div class="text-content short-text"> {{ article.abstract }} </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<hr>
+{% endfor %}
+
+<div class="pagination">
+    <span class="step-links">
+        {% if paginated_articles.has_previous %}
+            <a id="previous_page_link" href="?page={{ paginated_articles.previous_page_number }}">Previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ paginated_articles.number }} of {{ paginated_articles.paginator.num_pages }}
+        </span>
+
+        {% if paginated_articles.has_next %}
+            <a id="next_page_link" href="?page={{ paginated_articles.next_page_number }}">Next</a>
+        {% endif %}
+    </span>
+</div>

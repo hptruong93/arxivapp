@@ -12,6 +12,7 @@ from django.core import paginator
 from django.db import models as db_models
 from django.db import IntegrityError
 from django.db.models import Sum
+from django.views.decorators.http import require_GET, require_POST
 
 from main_app import models as main_app_models
 from main_app.history_tracking import history_tracking
@@ -192,7 +193,6 @@ def author(request, author_id):
 
     filter_args, filter_dict, order_by_fields, filter_data = view_renderer.general_filter_check(request)
     articles = view_renderer.query_filter(main_app_models.Paper.objects.filter(authors__id = author_id), filter_args, filter_dict, order_by_fields)
-    print articles.query
 
     return view_renderer.render_papers(request, view_renderer.TabData(articles, None, False),
                                         additional_data = view_renderer.AdditionalData('All articles by %s' % author,
@@ -234,6 +234,9 @@ def paper(request, paper_id):
     history_tracking.log_authors(current_user, paper)
     history_tracking.log_categories(current_user, paper)
 
+    # Check if paper has been bookmarked
+    is_bookmarked = main_app_models.PaperBookmark.objects.filter(user = current_user, paper = paper).count() > 0
+
     data = {
         'request' : request,
         'paper' : paper,
@@ -241,6 +244,7 @@ def paper(request, paper_id):
             'seen' : not new_paper,
             'last_access' : paper_history_record.last_access
         },
+        'is_bookmarked' : is_bookmarked,
         'authors' : paper.authors.all(),
         'categories' : paper.categories.all()
     }
@@ -252,6 +256,12 @@ def pdf(request, arxiv_id):
     paper = shortcuts.get_object_or_404(main_app_models.Paper, pk = arxiv_id)
     history_tracking.log_full_paper_view(request.user, paper)
     return shortcuts.HttpResponseRedirect('http://www.arxiv.org/pdf/%s' % arxiv_id)
+
+@auth_decorators.login_required
+def arxiv_abstract(request, arxiv_id):
+    paper = shortcuts.get_object_or_404(main_app_models.Paper, pk = arxiv_id)
+    history_tracking.log_abstract_paper_view(request.user, paper)
+    return shortcuts.HttpResponseRedirect('http://www.arxiv.org/abs/%s' % arxiv_id)
 
 @auth_decorators.login_required
 def history(request):
@@ -286,6 +296,51 @@ def history(request):
     }
 
     return shortcuts.render(request, 'history.html', data)
+
+@auth_decorators.login_required
+@require_POST
+def bookmark(request): # The bookmark action
+    current_user = request.user
+    arxiv_ids = request.POST['arxiv_ids'].split(',')
+    action = request.POST['action']
+    next_page = request.POST.get('next_page', None)
+
+    if action == "add":
+        papers = [shortcuts.get_object_or_404(main_app_models.Paper, pk = arxiv_id) for arxiv_id in arxiv_ids]
+
+        for paper in papers:
+            bookmark_object, is_new = main_app_models.PaperBookmark.objects.get_or_create(user = current_user, paper = paper)
+
+    else: # Delete
+        main_app_models.PaperBookmark.objects.filter(user = current_user, paper__pk__in = arxiv_ids).delete()
+
+    if next_page is None:
+        # Redirect to the first paper page
+        return http.HttpResponseRedirect(urlresolvers.reverse('paper', kwargs={'paper_id': arxiv_ids[0]}))
+    else:
+        return http.HttpResponseRedirect(next_page)
+
+
+@auth_decorators.login_required
+def bookmarks(request): # The bookmark page
+    current_user = request.user
+    filter_args = []
+    filter_dict = {}
+    order_by_fields = ['-created_time']
+
+    articles = view_renderer.query_filter(main_app_models.PaperBookmark.objects.filter(user = current_user), filter_args, filter_dict, order_by_fields)
+    articles = [article.paper for article in articles]
+
+    articles, paginated_articles, _ = view_renderer.prepare_view_articles(current_user, articles, view_renderer.get_page_number(request), log_paper_surf = False)
+
+    data = {
+        'request' : request,
+        'articles' : articles,
+        'paginated_articles' : paginated_articles,
+    }
+
+    return shortcuts.render(request, 'bookmarks.html', data)
+
 
 @auth_decorators.login_required
 def search(request):

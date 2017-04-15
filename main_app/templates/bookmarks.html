@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% load staticfiles %}
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>ARXIV Bookmarks</title>
+
+    {% include "parts/common_css.html" %}
+
+</head>
+
+<body id="page-top" class="index">
+
+    <!-- Navigation -->
+    {% include "nav_bar.html" %}
+
+    <!-- Header -->
+    <header>
+        <!-- <div class="container"> -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="intro-text">
+                        <span class="name">My Bookmarks</span>
+                    </div>
+                </div>
+            </div>
+        <!-- </div> -->
+    </header>
+
+    <!-- Portfolio Grid Section -->
+    <section id="portfolio">
+        <div class="container">
+            <div class="row">
+            </div>
+
+            {% if articles %}
+            <div class="tabs">
+                <ul class="tab-links">
+                    <li class="active"><a href="#tab1">Bookmarks</a></li>
+                </ul>
+
+                <div class="tab-content">
+                    <div id="tab1" class="tab active">
+                        <form class="form-signin" action="{% url 'bookmark' %}" method="post">
+                            {% csrf_token %}
+                            <input type="text" id="arxiv_ids" name="arxiv_ids" class="form-control" style="display: none;" value=""/>
+                            <input type="text" id="bookmark_action" name="action" class="form-control" style="display: none;" value="delete"/>
+                            <input type="text" id="bookmark_next_page" name="next_page" class="form-control" style="display: none;" value="{% url 'bookmarks' %}"/>
+                            <button id="unbookmark-button" class="btn btn-default" type="submit"> Remove selected items </button>
+                        </form>
+
+                        {% include "parts/bookmarks_display.html" %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            You currently have no bookmark.
+            {% endif %}
+
+        </div>
+    </section>
+
+    {% include "parts/common_js.html" %}
+    <script src="{% static 'js/app/bookmarks.js' %}"></script>
+
+</body>
+
+</html>

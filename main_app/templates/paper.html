@@ -50,13 +50,24 @@
             </ul>
             <p> Abstract </p>
             <p>{{ paper.abstract }}</p>
-            
+
+            <p><a href="{% url 'abstract' paper.arxiv_id %}"> View on arxiv </a></p>
             <p><a href="{% url 'pdf' paper.arxiv_id %}"> Link to full text </a></p>
             <div>
-                
+
             </div>
             <p style="text-align:left;">
-                <button class="btn btn-default"> Bookmark </button>
+                <form class="form-signin" action="{% url 'bookmark' %}" method="post">
+                    {% csrf_token %}
+                    <input type="text" id="arxiv_ids" name="arxiv_ids" class="form-control" style="display: none;" value="{{ paper.arxiv_id }}"/>
+                {% if is_bookmarked %}
+                    <input type="text" id="bookmark_action" name="action" class="form-control" style="display: none;" value="delete"/>
+                    <button class="btn btn-default" type="submit"> Un-bookmark </button>
+                {% else %}
+                    <input type="text" id="bookmark_action" name="action" class="form-control" style="display: none;" value="add"/>
+                    <button class="btn btn-default" type="submit"> Bookmark </button>
+                {% endif %}
+                </form>
 
                 {% if history.seen %}
                 <span style="float:right;">You have seen this paper on {{ history.last_access }}</span>

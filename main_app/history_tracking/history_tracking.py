@@ -11,6 +11,7 @@ MAX_HISTORY_CATEGORIES = 100
 MAX_HISTORY_CATEGORIES_FOCUS = 200
 MAX_HISTORY_SEARCH = 2000
 MAX_HISTORY_FULL_PAPER_VIEW = 1000
+MAX_HISTORY_ABSTRACT_PAPER_VIEW = 1000
 
 def _remove_history(history_query, maximum_history_item):
     """
@@ -95,3 +96,8 @@ def log_full_paper_view(current_user, paper):
     _add_history_record(models.FullPaperViewHistory, current_user, paper = paper)
     full_paper_view_history = models.FullPaperViewHistory.objects.filter(user = current_user).order_by('-last_access')
     _remove_history(full_paper_view_history, MAX_HISTORY_FULL_PAPER_VIEW)
+
+def log_abstract_paper_view(current_user, paper):
+    _add_history_record(models.PaperAbstractViewHistory, current_user, paper = paper)
+    full_paper_view_history = models.PaperAbstractViewHistory.objects.filter(user = current_user).order_by('-last_access')
+    _remove_history(full_paper_view_history, MAX_HISTORY_ABSTRACT_PAPER_VIEW)
