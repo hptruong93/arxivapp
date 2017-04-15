@@ -15,8 +15,6 @@ $(document).ready(function() {
         };
 
         $('[id^=check_box]').each(extractName);
-        console.log(totalString);
-
         document.getElementById('arxiv_ids').value = totalString;
     });
 });
