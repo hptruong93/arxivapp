@@ -1,6 +1,7 @@
 # arxivapp
 Web Application (Django based) used for research in recommender systems on Arxiv (www.arxiv.org) system.
-[The site](http://arxivapp.cs.mcgill.ca/)
+
+Our website: http://arxivapp.cs.mcgill.ca/.
 
 # Implementation details
 ## Paths and dependencies
